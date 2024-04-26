@@ -1,6 +1,30 @@
 import tkinter as tk
 from tkinter import filedialog
 from tkinter import messagebox
+import mysql.connector
+
+# import tkinter as tk
+# from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+# import matplotlib.pyplot as plt
+
+# # Create a tkinter window
+# root = tk.Tk()
+# root.geometry("600x400")
+
+# # Create a matplotlib figure and subplot
+# fig, ax = plt.subplots()
+# ax.plot([1, 2, 3, 4], [1, 4, 2, 3])
+
+# # Create a canvas
+# canvas = FigureCanvasTkAgg(fig, master=root)
+# canvas_widget = canvas.get_tk_widget()
+
+# # Place the canvas in the window using relative positioning
+# canvas_widget.place(relx=0, rely=0)
+
+# # Run the tkinter event loop
+# root.mainloop()
+
 
 
 root = None
@@ -9,6 +33,22 @@ home = None
 grader1 = None
 grader2 = None
 tomatoLabel = None
+
+def connectToDB():
+    try:
+        connection = mysql.connector.connect(
+            host='your_host',
+            user='your_username',
+            password='your_password',
+            database='your_database_name'
+        )
+        if connection.is_connected():
+            print("Connected to MySQL Server")
+            return [True , connection]
+
+    except mysql.connector.Error as e:
+        print(f"Error connecting to MySQL Server: {e}")
+        return [False, 0]
 
 
 def openRootWindow():      #Login Window
@@ -24,12 +64,24 @@ def openRootWindow():      #Login Window
             email = emailInput.get() #get email address from input field
             password = pwInput.get() #get password from input field
             # if  password and email correct then:
-            openHomeWindow()
-            #else
-            messagebox.showerror(message = "Incorrect email and/or password")
-            # messageLabel = tk.Label(root, text="Incorrect email and/or password, Try Again") 
-            # messageLabel.grid(row=5, column=0)
-
+            connect_check = connectToDB
+            if (connect_check[0]):
+                conn = connect_check[1]
+                cursor = conn.cursor()
+                query = "SELECT * FROM user WHERE Email = %s AND Password = %s"
+                cursor.execute(query, (email, password))
+                row = cursor.fetchone()
+                if row:
+                    fname = row[1]
+                    openHomeWindow(fname)
+                else:
+                    messagebox.showerror(message = "Incorrect email and/or password")
+                
+                cursor.close()
+                conn.close()
+            else:
+                messagebox.showerror(message="Failed to connect to the database")
+                
 
         # ------------------------------------------ ROOT DESIGN-----------------------------------------
         #LABELS
@@ -123,6 +175,26 @@ def openSignUpWindow(): #Sign Up Window
             signUp.withdraw()
             openRootWindow()
 
+        def createAccount(fName, lName, email, pw):
+            connect_check = connectToDB
+            if (connect_check[0]):
+                conn = connect_check[1]
+                cursor = conn.cursor()
+                query = "INSERT INTO user (FName, LName, Email, Password) VALUES (%s, %s, %s, %s)"
+                data = (fName, lName, email, pw)
+                cursor.execute(query, data)
+                conn.commit()
+
+                cursor.close()
+                conn.close()
+            else:
+                messagebox.showerror(message="Failed to connect to the database")
+
+        def ValidateInputs():
+            #validation done here
+            # if success call create Account
+            createAccount(fname, lname, email, pw)
+
         # ---------------------------------------SIGN UP DESIGN-----------------------------------------------------------
 
         #LABELS
@@ -130,7 +202,7 @@ def openSignUpWindow(): #Sign Up Window
         agrirateLabel.config(font=("Verdana", 20, "bold"), fg="white")
 
         #BUTTON
-        signUpButton = tk.Button(signUp, text="Sign Up", padx=50, pady=5, fg="#264D10", bg="#FFB316", command=createAccount)
+        signUpButton = tk.Button(signUp, text="Sign Up", padx=50, pady=5, fg="#264D10", bg="#FFB316", command=ValidateInputs)
         back = tk.Button(signUp, text="Back", fg="white", bg="#BF3100", command=backToRoot)
         
 
@@ -232,7 +304,7 @@ def openSignUpWindow(): #Sign Up Window
 
         # -----------------------------------------------------------------------------------------------------------------
 
-def openHomeWindow():   #Home Window
+def openHomeWindow(name):   #Home Window
     global home
     root.withdraw() 
     home = tk.Toplevel(root)
@@ -241,7 +313,7 @@ def openHomeWindow():   #Home Window
 
     # ----------------------------------------------HOME DESIGN------------------------------------------------------------
     #LABELS
-    homeLabel = tk.Label (home, text = "Welcome Back User!")
+    homeLabel = tk.Label (home, text = "Welcome Back " + name)
     homeLabel.config(font=("Arial", 14), fg="#BF3100")
     agrirateLabel = tk.Label (home, text = "AgriRate")
     agrirateLabel.config(font=("Verdana", 20, "bold"), fg="white")
@@ -438,8 +510,7 @@ def singleGrader():
 
 
 
-def createAccount():
-    pass
+
 
 def logout():
     home.withdraw()
