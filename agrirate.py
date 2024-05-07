@@ -4,6 +4,9 @@ from tkinter import messagebox
 import mysql.connector
 import re
 
+# key --
+
+
 # import tkinter as tk
 # from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 # import matplotlib.pyplot as plt
@@ -43,6 +46,7 @@ grader4 = None
 
 def connectToDB():
     try:
+        # update to connect database --
         connection = mysql.connector.connect(
             host='your_host',
             user='your_username',
@@ -67,6 +71,7 @@ def openRootWindow():      #Login Window
         root.geometry("700x500")
         root.title("Login")
 
+        #update to test the login function using real connection to database --
         def verifyLogin():
             email = emailInput.get() #get email address from input field
             password = pwInput.get() #get password from input field
@@ -181,6 +186,7 @@ def openSignUpWindow(): #Sign Up Window
             signUp.withdraw()
             openRootWindow()
 
+        # update database and check code below --
         def createAccount(fName, lName, email, pw):
             connect_check = connectToDB
             if (connect_check[0]):
@@ -348,6 +354,7 @@ def openHomeWindow(name):   #Home Window
 
     # ----------------------------------------------HOME DESIGN------------------------------------------------------------
     #LABELS
+    # update: check if this code works --
     homeLabel = tk.Label (home, text = "Welcome Back " + name)
     homeLabel.config(font=("Arial", 14), fg="#BF3100")
     agrirateLabel = tk.Label (home, text = "AgriRate")
@@ -530,7 +537,7 @@ def singleGrader():  #if users select single grading
     tomatoLabel.image = tomatoLogin  # Retain reference to the image
     tomatoLabel.place(relx=0, rely=0.6)
 
-
+# update check the loading screen --
 def openProduceGrader3Window():    #Loading Screen- should be visible until grade is ready
     global grader3
     if grader3:
@@ -819,6 +826,7 @@ def openProduceRecordsWindow():   #Window that displays produce records
         openHomeWindow()
     
     def deleteRecord():
+        # update implement code to delete record from the database --
         pass
 
     def editRecordWindow():
@@ -834,10 +842,12 @@ def openProduceRecordsWindow():   #Window that displays produce records
         doneButton.place(relx= 0.5, rely=0.6)
 
         def updateRecord():
+            # update implement code to update the stock name in the database --
             popup.withdraw()
             newName = stockNameEntry.get
 
-        
+    # udpate implement code to update the stock name, date and time for grading that code is not correct below--
+
     # def getUserRecords():
     #     connect_check = connectToDB
     #     if (connect_check[0]):
