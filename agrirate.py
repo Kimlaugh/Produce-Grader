@@ -3,6 +3,15 @@ from tkinter import filedialog
 from tkinter import messagebox
 import mysql.connector
 import re
+import os
+
+
+
+
+
+
+# key --
+
 
 # import tkinter as tk
 # from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
@@ -41,21 +50,46 @@ grader3 = None
 grader4 = None
 
 
+
+
+
+
 def connectToDB():
+    connection = mysql.connector.connect(
+    host="localhost",
+    user="capstone_user",
+    password="12345678",
+    database="capstone"
+    )
+    
     try:
-        connection = mysql.connector.connect(
-            host='your_host',
-            user='your_username',
-            password='your_password',
-            database='your_database_name'
-        )
+        # update to connect database -- update_done
         if connection.is_connected():
             print("Connected to MySQL Server")
-            return [True , connection]
+            return connection
 
     except mysql.connector.Error as e:
         print(f"Error connecting to MySQL Server: {e}")
-        return [False, 0]
+        return False
+
+
+def backToHome():
+    global grader1, grader2, grader3, graderStock2, graderStock3, grader4
+    if grader1:
+        grader1.withdraw()
+    if grader2:
+        grader2.withdraw()
+    if grader3:
+        grader3.withdraw()
+    if graderStock2:
+        graderStock2.withdraw()
+    if graderStock3:
+        graderStock3.withdraw()
+    if grader4:
+        grader4.withdraw()
+    
+    # grader2.withdraw()
+    openHomeWindow('Home') # -- update_done : added text inside function for all versions of it
 
 
 def openRootWindow():      #Login Window
@@ -67,18 +101,20 @@ def openRootWindow():      #Login Window
         root.geometry("700x500")
         root.title("Login")
 
+        # update to test the login function using real connection to database -- update_done 
         def verifyLogin():
+            openHomeWindow("user: remove both lines")
+            return True
             email = emailInput.get() #get email address from input field
             password = pwInput.get() #get password from input field
-            connect_check = connectToDB
-            if (connect_check[0]):
-                conn = connect_check[1]
-                cursor = conn.cursor()
+            conn = connectToDB()
+            if (conn):
+                cursor = conn.cursor(dictionary=True)
                 query = "SELECT * FROM user WHERE Email = %s AND Password = %s"
                 cursor.execute(query, (email, password))
                 row = cursor.fetchone()
                 if row:
-                    fname = row[1]
+                    fname = row["FName"]
                     openHomeWindow(fname)
                 else:
                     messagebox.showerror(message = "Incorrect email and/or password")
@@ -181,10 +217,10 @@ def openSignUpWindow(): #Sign Up Window
             signUp.withdraw()
             openRootWindow()
 
+        # update database and check code below --
         def createAccount(fName, lName, email, pw):
-            connect_check = connectToDB
-            if (connect_check[0]):
-                conn = connect_check[1]
+            conn = connectToDB()
+            if conn:
                 cursor = conn.cursor()
                 query = "INSERT INTO user (FName, LName, Email, Password) VALUES (%s, %s, %s, %s)"
                 data = (fName, lName, email, pw)
@@ -348,6 +384,7 @@ def openHomeWindow(name):   #Home Window
 
     # ----------------------------------------------HOME DESIGN------------------------------------------------------------
     #LABELS
+    # update: check if this code works --
     homeLabel = tk.Label (home, text = "Welcome Back " + name)
     homeLabel.config(font=("Arial", 14), fg="#BF3100")
     agrirateLabel = tk.Label (home, text = "AgriRate")
@@ -374,9 +411,13 @@ def openHomeWindow(name):   #Home Window
     
 
 def openProduceGrader1Window():  #Users select grading method
-    global grader1, tomatoLabel
+    global tomatoLabel, grader1, home
+    if home: # -- update: need to close home when other window is open
+        home.withdraw() 
+    
     if grader1:
         grader1.deiconify()
+        pass
     else:
         home.withdraw()
         grader1 = tk.Toplevel(home)
@@ -385,30 +426,31 @@ def openProduceGrader1Window():  #Users select grading method
 
         def gradeMethod():
             selected_option = var.get()
+            
             if selected_option == "Single":
                 singleGrader()
-                
+
             if selected_option == "Stock":
                 stockGrader()
 
 
-        def backToHome():
-            grader1.withdraw()
-            openHomeWindow()
+        # def backToHome():
+        #     grader1.withdraw()
+        #     openHomeWindow('Home')
 
 
         #-------------------------------DESIGN-----------------------------------------------------------
         #LABELS
         agrirateLabel = tk.Label (grader1, text = "AgriRate")
         agrirateLabel.config(font=("Verdana", 20, "bold"), fg="white")
-        graderLabel = tk.Label (grader1, text = "Produce Grader")
+        graderLabel = tk.Label (grader1, text = "Produce Grader 1")
         graderLabel.config(font=("Arial", 14), fg="#BF3100")
         selectLabel= tk.Label(grader1, text = "Select a grading method")
         selectLabel.config(font=("Arial", 12))
 
         #BUTTONS
         homeButton = tk.Button(grader1, text="Home", fg="white", bg="#BF3100", command=backToHome)
-        nextButton = tk.Button(grader1, text="Next", padx=50, pady=5, fg="#264D10", bg="#FFB316", command=gradeMethod)
+        nextButton = tk.Button(grader1, text="Next 1", padx=50, pady=5, fg="#264D10", bg="#FFB316", command=gradeMethod)
         
         #CANVAS
         canvas=tk.Canvas(grader1, width=700, height=50, bg="#264D10")
@@ -442,20 +484,26 @@ def openProduceGrader1Window():  #Users select grading method
 
 
 def singleGrader():  #if users select single grading
-    global grader2, tomatoLabel
+    global grader2, tomatoLabel, grader1
     selected_images = []
 
-    def backToHome():
-        grader2.withdraw()
-        openHomeWindow()
+    if grader1 and grader2:  # -- update_done : added if statement to remove the duplicate screen error
+        grader1.withdraw()
+
+    
+
+    # def backToHome():
+    #     grader2.withdraw()
+    #     openHomeWindow('Home') # -- update_done : added text inside function for all versions of it
 
     def backToGrader1():
         grader2.withdraw()
         openProduceGrader1Window()
 
     def uploadImage(): #Save 1 image to database (the file name ending in side Example tomato_side)
+        
         if len(selected_images) == 3:
-            messagebox.showinfo(message="Images successfully uploaded")
+            messagebox.showinfo(message="Images successfully uploade.")
 
             openProduceGrader3Window()
            
@@ -469,18 +517,25 @@ def singleGrader():  #if users select single grading
             return
     
         # If user selects more than 3 images
-        if len(selected_images) + len(file_paths) > 3:
+        if len(selected_images) + len(file_paths) > 3:  
+        # if len(file_paths) != 3 :
+            # clear the selected_images list
+            selected_images.clear()   #-- update_done: 
+            
             messagebox.showerror(message = "You can only select three images.")
             return
     
         # Add selected images to the list
         selected_images.extend(file_paths)
+        uploadButton.config(text=f"Add {3 - len(selected_images) } More Images")
     
         # Check if user has selected exactly 3 images
         if len(selected_images) == 3:
-            messagebox.showinfo(message ="Images successfully uploaded.")
-            #openSingleGrader2Window()
+            # messagebox.showinfo(message ="Images successfully uploaded.") -- update_done: so that code automatically goes to next window when 3 images are selected
+            # openSingleGrader2Window()
+            openProduceGrader3Window() # -- update_done : so that conde automatically goes to next window when 3 images are selected
             
+
         
 
     if grader2:
@@ -494,7 +549,7 @@ def singleGrader():  #if users select single grading
 
     #-------------------------------DESIGN-----------------------------------------------------------
     #LABELS
-    agrirateLabel = tk.Label (grader2, text = "AgriRate")
+    agrirateLabel = tk.Label (grader2, text = "AgriRate v2")
     agrirateLabel.config(font=("Verdana", 20, "bold"), fg="white")
     graderLabel = tk.Label (grader2, text = "Produce Grader")
     graderLabel.config(font=("Arial", 14), fg="#BF3100")
@@ -503,8 +558,8 @@ def singleGrader():  #if users select single grading
 
     #BUTTON
     homeButton = tk.Button(grader2, text="Home", fg="white", bg="#BF3100", command=backToHome)
-    back = tk.Button(grader2, text="Back", fg="white", bg="#BF3100", command=backToGrader1)
-    uploadButton= tk.Button(grader2, text="Upload Images",padx=50, pady=5, fg="#264D10", bg="#FFB316", command=uploadImage)
+    back = tk.Button(grader2, text="Back 1", fg="white", bg="#BF3100", command=backToGrader1)
+    uploadButton = tk.Button(grader2, text="Upload Images",padx=50, pady=5, fg="#264D10", bg="#FFB316", command=uploadImage)
 
     #CANVAS
     canvas=tk.Canvas(grader2, width=700, height=50, bg="#264D10")
@@ -530,19 +585,32 @@ def singleGrader():  #if users select single grading
     tomatoLabel.image = tomatoLogin  # Retain reference to the image
     tomatoLabel.place(relx=0, rely=0.6)
 
-
+# update check the loading screen --
 def openProduceGrader3Window():    #Loading Screen- should be visible until grade is ready
-    global grader3
+    global grader3, grader2, graderStock2
     if grader3:
         grader3.deiconify()
     else:
-        grader2.withdraw() 
-        graderStock2.withdraw()
+        if grader2:
+            grader2.withdraw()
+        if graderStock2:
+            graderStock2.withdraw()
         grader3 = tk.Toplevel(grader1)  
         grader3.geometry("700x500")
         grader3.title("Produce Grader")
 
-    
+    """ -- update_done: this was the original code: removed because it was causing errors --
+    def openProduceGrader3Window():    #Loading Screen- should be visible until grade is ready
+        global grader3
+        if grader3:
+            grader3.deiconify()
+        else:
+            grader2.withdraw() 
+            graderStock2.withdraw()
+            grader3 = tk.Toplevel(grader1)  
+            grader3.geometry("700x500")
+            grader3.title("Produce Grader")
+    """
     #--------------------------------------GRADER 3 DESIGN------------------------------------
     #LABELS
     agrirateLabel = tk.Label (grader3, text = "AgriRate")
@@ -568,7 +636,7 @@ def openProduceGrader3Window():    #Loading Screen- should be visible until grad
     loading_canvas = tk.Canvas(grader3, width=100, height=100, bg="white")
     loading_canvas.place(relx=0.42, rely=0.4)
 
-
+    
 
     def animate_loading(index):
         loading_canvas.delete("all")
@@ -579,7 +647,7 @@ def openProduceGrader3Window():    #Loading Screen- should be visible until grad
     # Load animation frames
     animation_frames = []
     for i in range(1, 9):
-        image_path = f"s{i}.png"
+        image_path = f"loading/s{i}.png"
         frame = tk.PhotoImage(file=image_path)
         animation_frames.append(frame)
 
@@ -634,14 +702,20 @@ def openProduceGrader4Window():   #Grade summary screen for single grader, displ
 
 
 def stockGrader():  #if users select stock grading
-    global graderStock2, tomatoLabel
+    global graderStock2, tomatoLabel, grader1
     selected_images = []
 
-    def backToHome():
-        graderStock2.withdraw()
-        openHomeWindow()
+    if grader1 and grader2:  # -- update_done : added if statement to remove the duplicate screen error
+        grader1.withdraw()
+
+    # def backToHome():
+    #     graderStock2.withdraw()
+    #     openHomeWindow('Home')
+
+    
 
     def backToGrader1():
+        
         graderStock2.withdraw()
         openProduceGrader1Window()
 
@@ -649,6 +723,7 @@ def stockGrader():  #if users select stock grading
         if len(selected_images) == 3:
             messagebox.showinfo(message="Images successfully uploaded")
             openProduceGrader3Window()
+
             
     
         # Ask user to select an image
@@ -670,7 +745,7 @@ def stockGrader():  #if users select stock grading
         # Check if user has selected exactly 3 images
         if len(selected_images) == 3:
             messagebox.showinfo(message ="Images successfully uploaded.")
-            openProduceGrader3Window()
+            # openProduceGrader3Window()
             
         
 
@@ -814,11 +889,22 @@ def openProduceRecordsWindow():   #Window that displays produce records
         produceRecords.geometry("700x500")
         produceRecords.title("Produce Records")
     
-    def backToHome():
-        produceRecords.withdraw()
-        openHomeWindow()
+    # def backToHome():
+    #     produceRecords.withdraw()
+    #     openHomeWindow('Home')
     
-    def deleteRecord():
+    def deleteRecord(stock_name):
+        # update implement code to delete record 'by name' from the database -- update_done
+        # stock (StockID	Name	Count	Date)
+
+        # added code below -- calvin 
+        conn = connectToDB()
+        if conn:
+            cursor = conn.cursor(dictionary=True)
+            query = "DELETE FROM stock WHERE Name = %s"
+            cursor.execute(query, (stock_name,))
+            conn.commit()
+            cursor.close()
         pass
 
     def editRecordWindow():
@@ -833,11 +919,24 @@ def openProduceRecordsWindow():   #Window that displays produce records
         doneButton = tk.Button(popup, text="Update", fg="#264D10", bg="#FFB316", command = updateRecord)
         doneButton.place(relx= 0.5, rely=0.6)
 
-        def updateRecord():
+        def updateRecord(old_name):
+            # update implement code to update the stock name in the database -- update_done
             popup.withdraw()
             newName = stockNameEntry.get
 
-        
+            # added code below -- calvin 
+            conn= connectToDB()[0]
+            if conn:
+                cursor = conn.cursor(dictionary=True)
+                query = "UPDATE stock SET Name = %s WHERE Name = %s"
+                cursor.execute(query, (newName, old_name))
+                conn.commit()
+                cursor.close()
+                
+
+
+    # udpate implement code to update the stock name, date and time for grading that code is not correct below--
+
     # def getUserRecords():
     #     connect_check = connectToDB
     #     if (connect_check[0]):
