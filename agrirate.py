@@ -4,6 +4,7 @@ from tkinter import messagebox
 import mysql.connector
 import re
 import os
+import shutil
 
 
 
@@ -502,10 +503,10 @@ def singleGrader():  #if users select single grading
 
     def uploadImage(): #Save 1 image to database (the file name ending in side Example tomato_side)
         
-        if len(selected_images) == 3:
-            messagebox.showinfo(message="Images successfully uploade.")
-
-            openProduceGrader3Window()
+        # if len(selected_images) == 3:
+        #     messagebox.showinfo(message="Images successfully uploaded.")
+        #     print (selected_images)
+        #     # openProduceGrader3Window()
            
     
         # Ask user to select an image
@@ -531,9 +532,43 @@ def singleGrader():  #if users select single grading
     
         # Check if user has selected exactly 3 images
         if len(selected_images) == 3:
-            # messagebox.showinfo(message ="Images successfully uploaded.") -- update_done: so that code automatically goes to next window when 3 images are selected
+            folder = "input_folder"
+            if not os.path.exists(folder):
+                os.makedirs(folder)
+            else:
+                # Clear the contents of the folder
+                for file_name in os.listdir(folder):
+                    file_path = os.path.join(folder, file_name)
+                    try:
+                        if os.path.isfile(file_path):
+                            os.unlink(file_path)
+                    except Exception as e:
+                        print(f"Failed to delete {file_path}. Reason: {e}")
+            x = 0
+            for s in selected_images:
+               
+                if os.path.exists(s):
+                    image_filename = os.path.basename(s)
+                    # You can modify the renaming logic here
+                    if x == 0:
+                        new_image_name = "produce_top.jpg"  # Example: Adding 'new_' prefix
+                        # Construct the new path within the new folder
+                        new_image_path = os.path.join(folder, new_image_name)
+                        # Copy the image to the new folder with the new name
+                        shutil.copy2(s,new_image_path)
+                    else:
+                        new_image_name = "produce_side" + str(x) + ".jpg"  # Example: Adding 'new_' prefix
+                        # Construct the new path within the new folder
+                        new_image_path = os.path.join(folder, new_image_name)
+                        # Copy the image to the new folder with the new name
+                        shutil.copy2(s,new_image_path)
+                    x += 1
+
+
+            messagebox.showinfo(message = str(selected_images))#"Images successfully uploaded.") #-- update_done: so that code automatically goes to next window when 3 images are selected
+            
             # openSingleGrader2Window()
-            openProduceGrader3Window() # -- update_done : so that conde automatically goes to next window when 3 images are selected
+            # openProduceGrader3Window() # -- update_done : so that conde automatically goes to next window when 3 images are selected
             
 
         
