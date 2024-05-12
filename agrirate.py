@@ -5,6 +5,9 @@ import mysql.connector
 import re
 import os
 import shutil
+import classifcation_model
+import Produce_Grading
+import time
 
 
 
@@ -560,13 +563,24 @@ def singleGrader():  #if users select single grading
                         new_image_name = "produce_side" + str(x) + ".jpg"  # Example: Adding 'new_' prefix
                         # Construct the new path within the new folder
                         new_image_path = os.path.join(folder, new_image_name)
+                        img_for_classification = new_image_path
                         # Copy the image to the new folder with the new name
                         shutil.copy2(s,new_image_path)
                     x += 1
 
+            class_result = classifcation_model.predictor(img_for_classification,3,700)
+            if (class_result['status']=="success"):
+                produce_type = class_result['content']
+                messagebox.showinfo(message = "Produce is: " + produce_type)
+                # openProduceGrader3Window(produce_type, folder)
+                grade_result = Produce_Grading.GetGrades(produce_type, folder)
+                # time.sleep(2)
+                if grade_result:
+                    openProduceGrader4Window(grade_result, produce_type)
+                #"Images successfully uploaded.") #-- update_done: so that code automatically goes to next window when 3 images are selected
+            else:
+                messagebox.showinfo(message = "There was an error: "+ {class_result['content']})#"Images successfully uploaded.") #-- update_done: so that code automatically goes to next window when 3 images are selected
 
-            messagebox.showinfo(message = str(selected_images))#"Images successfully uploaded.") #-- update_done: so that code automatically goes to next window when 3 images are selected
-            
             # openSingleGrader2Window()
             # openProduceGrader3Window() # -- update_done : so that conde automatically goes to next window when 3 images are selected
             
@@ -621,7 +635,7 @@ def singleGrader():  #if users select single grading
     tomatoLabel.place(relx=0, rely=0.6)
 
 # update check the loading screen --
-def openProduceGrader3Window():    #Loading Screen- should be visible until grade is ready
+def openProduceGrader3Window(produce_type, folder):    #Loading Screen- should be visible until grade is ready
     global grader3, grader2, graderStock2
     if grader3:
         grader3.deiconify()
@@ -633,6 +647,7 @@ def openProduceGrader3Window():    #Loading Screen- should be visible until grad
         grader3 = tk.Toplevel(grader1)  
         grader3.geometry("700x500")
         grader3.title("Produce Grader")
+
 
     """ -- update_done: this was the original code: removed because it was causing errors --
     def openProduceGrader3Window():    #Loading Screen- should be visible until grade is ready
@@ -689,7 +704,12 @@ def openProduceGrader3Window():    #Loading Screen- should be visible until grad
     # Start animation
     animate_loading(0)
 
-def openProduceGrader4Window():   #Grade summary screen for single grader, displays after loading screen when grade is ready
+    grade_result = Produce_Grading.GetGrades(produce_type, folder)
+    # time.sleep(2)
+    if grade_result:
+        openProduceGrader4Window(grade_result, produce_type)
+
+def openProduceGrader4Window(result, pType):   #Grade summary screen for single grader, displays after loading screen when grade is ready
     global grader4
     if grader4:
         grader4.deiconify()
@@ -707,9 +727,9 @@ def openProduceGrader4Window():   #Grade summary screen for single grader, displ
     agrirateLabel.config(font=("Verdana", 20, "bold"), fg="white")
     graderLabel = tk.Label (grader4, text = "Produce Grader")
     graderLabel.config(font=("Arial", 14), fg="#BF3100")
-    produceTypeLabel = tk.Label (grader4, text = "Crop: Carrot")  #Replace with info from database
+    produceTypeLabel = tk.Label (grader4, text = "Crop: "+ pType)  #Replace with info from database
     produceTypeLabel.config(font=("Arial", 12))
-    gradeLabel= tk.Label (grader4, text = "Grade: 2")  #Replace with info from database
+    gradeLabel= tk.Label (grader4, text = "Grade: " + str(result))  #Replace with info from database
     gradeLabel.config(font=("Arial", 12))
 
     #BUTTON
@@ -755,12 +775,6 @@ def stockGrader():  #if users select stock grading
         openProduceGrader1Window()
 
     def uploadImage():
-        if len(selected_images) == 3:
-            messagebox.showinfo(message="Images successfully uploaded")
-            openProduceGrader3Window()
-
-            
-    
         # Ask user to select an image
         file_paths = filedialog.askopenfilenames(title="Choose an image of the produce")
     
@@ -779,8 +793,51 @@ def stockGrader():  #if users select stock grading
     
         # Check if user has selected exactly 3 images
         if len(selected_images) == 3:
-            messagebox.showinfo(message ="Images successfully uploaded.")
-            # openProduceGrader3Window()
+            folder = "input_folder"
+            if not os.path.exists(folder):
+                os.makedirs(folder)
+            else:
+                # Clear the contents of the folder
+                for file_name in os.listdir(folder):
+                    file_path = os.path.join(folder, file_name)
+                    try:
+                        if os.path.isfile(file_path):
+                            os.unlink(file_path)
+                    except Exception as e:
+                        print(f"Failed to delete {file_path}. Reason: {e}")
+            x = 0
+            for s in selected_images:
+                
+                if os.path.exists(s):
+                    image_filename = os.path.basename(s)
+                    # You can modify the renaming logic here
+                    if x == 0:
+                        new_image_name = "produce_top.jpg"  # Example: Adding 'new_' prefix
+                        # Construct the new path within the new folder
+                        new_image_path = os.path.join(folder, new_image_name)
+                        # Copy the image to the new folder with the new name
+                        shutil.copy2(s,new_image_path)
+                    else:
+                        new_image_name = "produce_side" + str(x) + ".jpg"  # Example: Adding 'new_' prefix
+                        # Construct the new path within the new folder
+                        new_image_path = os.path.join(folder, new_image_name)
+                        img_for_classification = new_image_path
+                        # Copy the image to the new folder with the new name
+                        shutil.copy2(s,new_image_path)
+                    x += 1
+
+            class_result = classifcation_model.predictor(img_for_classification,3,700)
+            if (class_result['status']=="success"):
+                produce_type = class_result['content']
+                messagebox.showinfo(message = "Produce is: " + produce_type)
+                # openProduceGrader3Window(produce_type, folder)
+                grade_result = Produce_Grading.GetGrades(produce_type, folder)
+                # time.sleep(2)
+                if grade_result:
+                    openStockGrader2Window(grade_result, produce_type)
+                #"Images successfully uploaded.") #-- update_done: so that code automatically goes to next window when 3 images are selected
+            else:
+                messagebox.showinfo(message = "There was an error: "+ {class_result['content']})
             
         
 
@@ -855,18 +912,82 @@ def stockGrader():  #if users select stock grading
     stockNameInput.bind('<FocusOut>', on_stock_focusout)
 
 
-def openStockGrader2Window():  #summary screen for stock grader  (should loop until user selects done Loop: user goes back to grader3 then graderStock3 over and over)
+def openStockGrader2Window(result, pType):  #summary screen for stock grader  (should loop until user selects done Loop: user goes back to grader3 then graderStock3 over and over)
     global graderStock3, tomatoLabel
+    selected_images = []
     if graderStock3:
         graderStock3.deiconify()
     else:
-        grader3.withdraw()
+        # grader3.withdraw()
         graderStock3 = tk.Toplevel(graderStock2) 
         graderStock3.geometry("700x500")
         graderStock3.title("Produce Grader")
     
     def uploadImage():
-        pass
+        # Ask user to select an image
+        file_paths = filedialog.askopenfilenames(title="Choose an image of the produce")
+    
+        # If user cancels the selection
+        if not file_paths: 
+            messagebox.showerror(message="Please select an image.")
+            return
+    
+        # If user selects more than 3 images
+        if len(selected_images) + len(file_paths) > 3:
+            messagebox.showerror(message = "You can only select three images.")
+            return
+    
+        # Add selected images to the list
+        selected_images.extend(file_paths)
+    
+        # Check if user has selected exactly 3 images
+        if len(selected_images) == 3:
+            folder = "input_folder"
+            if not os.path.exists(folder):
+                os.makedirs(folder)
+            else:
+                # Clear the contents of the folder
+                for file_name in os.listdir(folder):
+                    file_path = os.path.join(folder, file_name)
+                    try:
+                        if os.path.isfile(file_path):
+                            os.unlink(file_path)
+                    except Exception as e:
+                        print(f"Failed to delete {file_path}. Reason: {e}")
+            x = 0
+            for s in selected_images:
+                
+                if os.path.exists(s):
+                    image_filename = os.path.basename(s)
+                    # You can modify the renaming logic here
+                    if x == 0:
+                        new_image_name = "produce_top.jpg"  # Example: Adding 'new_' prefix
+                        # Construct the new path within the new folder
+                        new_image_path = os.path.join(folder, new_image_name)
+                        # Copy the image to the new folder with the new name
+                        shutil.copy2(s,new_image_path)
+                    else:
+                        new_image_name = "produce_side" + str(x) + ".jpg"  # Example: Adding 'new_' prefix
+                        # Construct the new path within the new folder
+                        new_image_path = os.path.join(folder, new_image_name)
+                        img_for_classification = new_image_path
+                        # Copy the image to the new folder with the new name
+                        shutil.copy2(s,new_image_path)
+                    x += 1
+
+            class_result = classifcation_model.predictor(img_for_classification,3,700)
+            if (class_result['status']=="success"):
+                produce_type = class_result['content']
+                messagebox.showinfo(message = "Produce is: " + produce_type)
+                # openProduceGrader3Window(produce_type, folder)
+                grade_result = Produce_Grading.GetGrades(produce_type, folder)
+                # time.sleep(2)
+                if grade_result:
+                    openStockGrader2Window(grade_result, produce_type)
+                #"Images successfully uploaded.") #-- update_done: so that code automatically goes to next window when 3 images are selected
+            else:
+                messagebox.showinfo(message = "There was an error: "+ {class_result['content']})
+            
 
     #-------------------------------DESIGN-----------------------------------------------------------
     #LABELS
@@ -875,8 +996,8 @@ def openStockGrader2Window():  #summary screen for stock grader  (should loop un
     graderLabel = tk.Label (graderStock3, text = "Produce Grader")
     graderLabel.config(font=("Arial", 14), fg="#BF3100")
     promptLabel = tk.Label (graderStock3, text = "Upload 3 images of the next produce in the order: side, other side, top view")
-    produceTypeLabel = tk.Label (graderStock3, text = "Crop: Carrot") #Get from database
-    produceGradeLabel = tk.Label (graderStock3, text = "Grade: 2") #Get from database
+    produceTypeLabel = tk.Label (graderStock3, text = "Crop:" +pType) #Get from database
+    produceGradeLabel = tk.Label (graderStock3, text = "Grade: "+ str(result)) #Get from database
     produceGradeLabel.config(font=("Arial", 12))
     produceTypeLabel.config(font=("Arial", 12))
     promptLabel.config(font=("Arial", 12))
