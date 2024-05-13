@@ -10,10 +10,6 @@ import Produce_Grading
 import time
 
 
-
-
-
-
 # key --
 
 
@@ -43,6 +39,7 @@ import time
 
 root = None
 signUp = None
+currentUser = dict()
 home = None
 grader1 = None
 grader2 = None
@@ -108,6 +105,7 @@ def openRootWindow():      #Login Window
         # update to test the login function using real connection to database -- update_done 
         def verifyLogin():
             openHomeWindow("user: remove both lines")
+            currentUser['user_id'] = 1
             return True
             email = emailInput.get() #get email address from input field
             password = pwInput.get() #get password from input field
@@ -415,7 +413,7 @@ def openHomeWindow(name):   #Home Window
     
 
 def openProduceGrader1Window():  #Users select grading method
-    global tomatoLabel, grader1, home
+    global tomatoLabel, grader1
     if home: # -- update: need to close home when other window is open
         home.withdraw() 
     
@@ -750,7 +748,7 @@ def openProduceGrader4Window(result, pType):   #Grade summary screen for single 
     gradeLabel.place(relx=0.465, rely= 0.78)
 
     #IMAGE get segmented image from database
-    segmentedImage = tk.PhotoImage(file="s1.png")
+    segmentedImage = tk.PhotoImage(file="loading/s1.png")
     imageLabel = tk.Label(grader4, image=segmentedImage)
     imageLabel.image = segmentedImage
     imageLabel.place(relx =0.36, rely=0.15)
@@ -1037,31 +1035,41 @@ def openStockGrader2Window(result, pType):  #summary screen for stock grader  (s
 
 
 def openProduceRecordsWindow():   #Window that displays produce records
-    global produceRecords
+    global produceRecords, home
+    
+
     if produceRecords:
         produceRecords.deiconify()
     else:
-        produceRecords = tk.Toplevel(root)  #change to home
+        produceRecords = tk.Toplevel(home)  #change to home
         produceRecords.geometry("700x500")
         produceRecords.title("Produce Records")
-    
-    # def backToHome():
-    #     produceRecords.withdraw()
-    #     openHomeWindow('Home')
-    
-    def deleteRecord(stock_name):
-        # update implement code to delete record 'by name' from the database -- update_done
-        # stock (StockID	Name	Count	Date)
 
-        # added code below -- calvin 
+
+
+    ############################ WORK IN PROGRESS ENDS ############################
+    
+    def deleteRecord(stock_id):
+        # Function to handle delete action
+        # Implement delete action here using idx to identify the item in the overview list
+        # remove record from database
         conn = connectToDB()
         if conn:
             cursor = conn.cursor(dictionary=True)
-            query = "DELETE FROM stock WHERE Name = %s"
-            cursor.execute(query, (stock_name,))
+            query = "DELETE FROM stock WHERE StockID = %s"
+            cursor.execute(query, (idx,))
             conn.commit()
             cursor.close()
-        pass
+            conn.close()
+
+        # Clear the canvas
+        for widget in produceRecords.winfo_children():
+            widget.destroy()
+
+        openProduceRecordsWindow()
+
+
+        print(f"Delete item at index {idx}")
 
     def editRecordWindow():
         popup = tk.Toplevel(produceRecords)
@@ -1081,7 +1089,7 @@ def openProduceRecordsWindow():   #Window that displays produce records
             newName = stockNameEntry.get
 
             # added code below -- calvin 
-            conn= connectToDB()[0]
+            conn= connectToDB()
             if conn:
                 cursor = conn.cursor(dictionary=True)
                 query = "UPDATE stock SET Name = %s WHERE Name = %s"
@@ -1118,8 +1126,78 @@ def openProduceRecordsWindow():   #Window that displays produce records
     recordCanvas = tk.Canvas(produceRecords, width=670, height=70, bg="#264D10")
     editButton = tk.Button(recordCanvas, text="Edit", fg="#264D10", bg="#FFB316", command = editRecordWindow)
     deleteButton = tk.Button(recordCanvas, text="Delete", fg="white", bg="#BF3100", command = deleteRecord)
-    reportButton = tk.Button(recordCanvas, text="Report", fg="#264D10", bg="#FFB316", command = openReportWindow)
-    chartsButton = tk.Button(recordCanvas, text="Charts", fg="#264D10", bg="#FFB316", command = openChartsWindow)
+    reportButton = tk.Button(recordCanvas, text="Report", fg="#264D10", bg="#FFB316")#, command = openReportWindow)
+    chartsButton = tk.Button(recordCanvas, text="Charts", fg="#264D10", bg="#FFB316")#, command = openChartsWindow)
+
+
+    #################################################################### DISPLAY RECORDS ####################################################################
+    # add a text field to enter stock name --update testing 
+    # overview = [{"name": "Apple", "type": "Fruit"}, 
+    #             {"name": "Carrot", "type": "Vegetable"}, 
+    #             {"name": "Mango", "type": "Fruit"},
+    #             {"name": "Red Onion", "type": "Vegetable"}]
+    
+
+    """ Stock table
+    1	StockID	int(11)			No	None			    Change Change	    Drop Drop	
+	2	Name	varchar(100)	utf8mb4_general_ci		No	None		    Change Change	Drop Drop	
+	3	Count	int(11)			No	None			    Change Change	    Drop Drop	
+	4	Date	datetime		No	None			    Change Change	    Drop Drop
+
+    INSERT INTO `stock` (StockID,UserID,Name,Count,Date) VALUES 
+    (1,1, 'Apple', 100, '2024-05-01 08:00:00'), 
+    (2,1, 'Banana', 150, '2024-05-02 10:30:00'), 
+    (3,1, 'Carrot', 75, '2024-05-03 12:15:00'), 
+    (4,1, 'Orange', 200, '2024-05-04 14:45:00'), 
+    (5,1, 'Tomato', 120, '2024-05-05 16:20:00');	
+    """
+
+    # info needed:  Name, Date
+    
+    query = "SELECT StockID,name, date FROM stock WHERE UserID = %s"
+    conn = connectToDB()
+    if conn:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute(query, (currentUser['user_id'],))
+        # cursor.execute(query)
+        stocks = cursor.fetchall()
+        cursor.close()
+        conn.close()
+    
+
+
+    titleLabel = tk.Label(produceRecords, text="Produce Records Page")
+    titleLabel.config(font=("Arial", 16), fg="black", bg="#ffffff")
+    titleLabel.pack(pady=10)
+
+    recordCanvas = tk.Canvas(produceRecords, width=670, height=1000, bg="#ffffff")
+    recordCanvas.pack()
+
+    
+
+    # def displayRecords(overview):
+    for idx, item in enumerate(stocks):
+        stock_id = int(item["StockID"])
+        name = item["name"]
+        date_ = item["date"]
+
+        
+        recordCanvas.create_text(30, 15 + idx * 70, anchor='nw', text=f"Name: {name}", font=("Arial", 14))
+        recordCanvas.create_text(30, 35 + idx * 70, anchor='nw', text=f"Date: {date_}", font=("Arial", 10))
+
+        edit_button = tk.Button(produceRecords, text="Edit", command=lambda idx=stock_id: edit_item(idx))
+        edit_button.place(x=450, y=20 + idx * 70)
+
+        delete_button = tk.Button(produceRecords, text="Delete", command=lambda idx=stock_id: deleteRecord(idx))
+        delete_button.place(x=520, y=20 + idx * 70)
+
+    # Function to handle edit action
+    def edit_item(idx):
+        # Implement edit action here using idx to identify the item in the overview list
+
+        print(f"Edit item at index {idx}")
+
+    
 
     #CANVAS
     canvas=tk.Canvas(produceRecords, width=700, height=50, bg="#264D10")
@@ -1135,6 +1213,7 @@ def openProduceRecordsWindow():   #Window that displays produce records
 
     # Display records
     #if records exist for user:
+    records = []
     for record in records:
         recordCanvas = tk.Canvas(produceRecords, width=670, height=70, bg="#264D10")
        
@@ -1151,6 +1230,8 @@ def openProduceRecordsWindow():   #Window that displays produce records
         recordCanvas.pack(padx=10, pady=10)
     #else
         # messagebox.showinfo(message ="You have no produce records")
+
+    
 
 
 
