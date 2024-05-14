@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Produce Records</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        /* Custom styles */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        .banner {
+            background-color: #28a745;
+            color: #fff;
+            padding: 10px 0;
+            text-align: center;
+        }
+        .container {
+            margin-top: 20px;
+        }
+        .table-container {
+            margin-top: 20px;
+        }
+        .table-container table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .table-container th, .table-container td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        .table-container th {
+            background-color: #f2f2f2;
+            color: #333;
+        }
+        .table-container td {
+            background-color: #fff;
+        }
+        .button-container {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        .edit-button, .delete-button, .view-button {
+            padding: 8px 16px;
+            cursor: pointer;
+        }
+        .edit-button {
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+        }
+        .view-button {
+            background-color: #ffd500;
+            color: #fff;
+            border: none;
+        }
+        .delete-button {
+            background-color: #dc3545;
+            color: #fff;
+            border: none;
+        }
+
+        .home {
+            background-color: #BF3100;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+        }
+        .back {
+            background-color: #bfac00;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+        }
+        .banner_container{
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="banner">
+    <div class="container banner_container">
+        <h1>AgriRate</h1>
+        <div>
+        <a class="btn back" href="{{url_for('mainPage')}}">Back</a>
+        <a class="btn home" href="{{url_for('mainPage')}}">Home</a>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <h2>Produce Records</h2>
+    {% include 'flash_messages.html' %}
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Date</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Example produce record -->
+                {% for record in records %}
+                <tr>
+                    <td>{{ record.name }}</td>
+                    <td>{{ record.date }}</td>
+                    <td>
+                        <div class="button-container">
+                            <a class="edit-button" href="{{ url_for('editRecord', name=record['name']) }}">Edit</a>
+                            <a class="view-button" href="{{ url_for('viewStockGradeRecords', name=record['name']) }}">View</a>
+
+                            <a class="delete-button" href="{{ url_for('deleteRecord', stock_id=record['stock_id']) }}">Delete</a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+                
+                <!-- Repeat this structure for each produce record -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+
+
+</body>
+</html>

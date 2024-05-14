@@ -92,7 +92,7 @@
     function gradeMethod() {
         var selected_option = document.querySelector('input[name="gradeMethod"]:checked').value;
         if (selected_option === "Single") {
-            window.location.href = "{{ url_for('upload') }}";
+            window.location.href = "{{ url_for('uploadSingle') }}";
         } else if (selected_option === "Stock") {
             window.location.href = "{{ url_for('getStockName') }}";;
         }

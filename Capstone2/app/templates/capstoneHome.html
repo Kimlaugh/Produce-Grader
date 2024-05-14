@@ -6,6 +6,7 @@
     <title>Login - AgriRate</title>
     <!-- Bootstrap CSS -->
     <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     <style>
         /* Custom styles */
         .banner {
@@ -63,6 +64,7 @@
     
 <div class="container mt-5">
     <h2>Welcome to AgriRate</h2>
+    {% include 'flash_messages.html' %}
     <form action="{{ url_for('login') }}" method="post">
     <div class="form-group">
         <input type="email" class="form-control" id="email" name="email" placeholder="Enter email">

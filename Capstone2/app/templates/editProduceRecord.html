@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"> <!-- Adjusted viewport meta tag -->
+	<title>Login - AgriRate</title>
+	<!-- Bootstrap CSS -->
+	<link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+	<style>
+		/* Custom styles */
+		.banner {
+			background-color: #28a745;
+			color: #fff;
+			padding: 10px 0;
+			text-align: center;
+		}
+		.main_ {
+			height: 90%;
+
+		}
+		.fixed-image {
+			position: fixed;
+			bottom: 20px; /* Adjust as needed */
+			right: 20px; /* Adjust as needed */
+		}
+
+		body{
+
+		}
+
+		form{
+
+		}
+
+		.flex_{
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+
+
+		}
+		.text-center{
+			align-self: flex-end;
+			margin-left: 20vw;
+		}
+
+		.banner_container{
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+
+		}
+		.home {
+			background-color: #BF3100;
+			color: #fff;
+			border: none;
+			padding: 10px 20px;
+			cursor: pointer;
+		}
+		.back {
+			background-color: #bfac00;
+			color: #fff;
+			border: none;
+			padding: 10px 20px;
+			cursor: pointer;
+		}
+	</style>
+</head>
+
+
+<body>
+
+	<div class="banner">
+		<div class="container banner_container">
+			<h1>AgriRate</h1>
+			<div>
+			<a class="btn back" href="{{ url_for('produceRecords')}}">Back</a>
+			<a class="btn home" href="{{ url_for('home')}}">Home</a>
+			</div>
+		</div>
+	</div>
+
+<div class="container main_ mt-5">
+	<h2>Update Produce Record</h2>
+	{% include 'flash_messages.html' %}
+	<form  action="{{ url_for('editRecord',name=stock_name) }}" method="post">
+		{{ form.csrf_token }}
+		<div class="form-group">
+			{{ form.name(class="form-control", id="name", placeholder=stock_name) }}
+		</div>
+
+
+		<button type="submit" class="btn btn-primary" >Update</button>
+	</form>
+</div>
+
+<!-- Image fixed to bottom-right corner -->
+<!-- make it center  -->
+<div class="footer  d-flex justify-content-center align-items-center">
+
+	<img src="{{ url_for('static', filename='images/tomato_croped.png') }}" class="" alt="Fixed Image">
+
+</div>
+
+
+<!-- Bootstrap JS -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>
+

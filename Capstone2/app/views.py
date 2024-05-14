@@ -4,7 +4,7 @@ from flask import render_template, request, redirect, url_for, flash, session, a
 from flask_login import login_user, logout_user, current_user, login_required
 from werkzeug.utils import secure_filename
 from app.models import UserProfile
-from app.forms import LoginForm, UploadForm, RegisterForm
+from app.forms import LoginForm, UploadForm, RegisterForm, ProduceRecord
 from flask import send_from_directory
 from flask_login import logout_user
 from datetime import datetime
@@ -116,10 +116,10 @@ def register():
 def getStockName():
     return render_template('StockName.html', grad_type = "single")
 
-@app.route('/upload', methods=['POST', 'GET'])
+@app.route('/upload/single', methods=['POST', 'GET'])
 # @login_required
-def upload():
-    return render_template('upload.html', grad_type = "single")
+def uploadSingle():
+    return render_template('uploadImg.html', grad_type = "single")
 
 stock_name = ""
 stock_id = 0
@@ -152,11 +152,11 @@ def uploadStock():
 
     
     print(stock_name)
-    return render_template('upload.html', grad_type = "stock")
+    return render_template('uploadImg.html', grad_type = "stock")
 
 @app.route('/upload/stockAgain')
 def uploadStockAgain():
-    return render_template('upload.html', grad_type = "stock")
+    return render_template('uploadImg.html', grad_type = "stock")
 
 
 @app.route('/save', methods=['POST'])
@@ -275,7 +275,7 @@ def grade():
     else:
         flash("This is not a recognised Produce")
         print (class_result['content'])
-        return render_template('upload.html', grad_type = "single")
+        return render_template('uploadImg.html', grad_type = "single")
     
 user_stock = []
 
@@ -361,7 +361,7 @@ def gradeStock():
     else:
         flash("This is not a recognised Produce")
         print (class_result['content'])
-        return render_template('upload.html', grad_type = "stock")
+        return render_template('uploadImg.html', grad_type = "stock")
             
         
 
@@ -387,18 +387,19 @@ def login():
             fname = row["FName"]
             global user_id
             user_id = row["UserID"]
+            session['user_id'] = user_id
             cursor.close()
             conn.close()
             return render_template("home.html", name = fname)
         else:
             cursor.close()
             conn.close()
-            flash('Invalid username or password. Please try again.', 'error')
+            flash('Invalid username or password. Please try again.', 'danger')
             return render_template("capstoneHome.html")
         
         
     else:
-        flash('Eerror connecting to database', 'error')
+        flash('Eerror connecting to database', 'danger')
         return render_template("capstoneHome.html")
         
     # return render_template("login.html", form=form)
@@ -488,6 +489,188 @@ def add_header(response):
 def page_not_found(error):
     """Custom 404 page."""
     return render_template('404.html'), 404
+
+
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+##################################################### Produce Records Functions  Start ############################################################
+"""
+uses: produceRecords.html, editProduceRecord.html
+requirements: /login route must set session['user_id']
+further updates: main.js <resend>, flash_message route <resend>, 
+setup: place the {% include 'flash_messages.html' %} in the <body> of the html you are using to display error
+"""
+
+@app.route('/produceRecords')
+def produceRecords():
+	# Connect to the database
+	 # remove this
+	conn = mysql.connector.connect(
+		host="localhost",
+		user="agrirate",
+		password="password",
+		database="capstone"
+	)
+
+	# # Check if connection is successful
+	if conn:
+		cursor = conn.cursor(dictionary=True)
+
+		# Execute query to fetch produce records for the current user
+		query = "SELECT name, date, stockID as stock_id FROM stock WHERE UserID = %s"
+		cursor.execute(query, (session['user_id'],))
+		produce_records = cursor.fetchall()
+
+		cursor.close()
+		conn.close()        
+
+		# Render the template with the produce records
+	return render_template('produceRecords.html', records=produce_records)
+
+@app.route('/deleteRecord/<int:stock_id>')
+def deleteRecord(stock_id):
+	# Function to handle delete action
+	conn = connectToDB()
+	if not conn:
+		return redirect(url_for('produceRecords'))
+	if conn:
+		# check if name already exists
+		cursor = conn.cursor(dictionary=True)
+		query = "SELECT * FROM stock WHERE StockID = %s"
+		cursor.execute(query, (stock_id,))
+		result = cursor.fetchone()
+		if not result:
+			flash('Record not found.','danger')
+
+		else:
+			query = "DELETE FROM stock WHERE StockID = %s"
+			cursor.execute(query, (stock_id,))
+			conn.commit()
+			cursor.close()
+			conn.close()
+	return redirect(url_for('produceRecords'))
+
+
+@app.route('/editRecord/<name>', methods=['GET','POST'])
+def editRecord(name):
+	 # remove this
+	form = ProduceRecord()
+	if form.validate_on_submit():
+		new_name = form.name.data
+		# check if name already exists
+		conn = connectToDB()
+		if conn:
+			cursor = conn.cursor(dictionary=True)
+			query = "SELECT * FROM stock WHERE Name = %s AND UserID = %s"
+			cursor.execute(query, (new_name, session['user_id']))
+			result = cursor.fetchone()
+			if result:
+				flash('Name already exists. Please choose a different name.','danger')
+				return redirect(url_for('editRecord', name=name))
+			else:
+				query = "UPDATE stock SET Name = %s WHERE Name = %s AND UserID = %s"
+				cursor.execute(query, (new_name, name, session['user_id']))
+				conn.commit()
+				cursor.close()
+				conn.close()
+				flash('Record was successfully updated', 'success')
+				return redirect(url_for('produceRecords'))
+
+	return render_template('editProduceRecord.html', form=form, stock_name=name)
+	pass
+
+
+######################################################## Produce Record Functions  End ##############################################################
+#####################################################################################################################################################
+
+
+
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+######################################################## Stock Records Functions  Start ##############################################################
+"""
+description: shows the stock report of the user for a specific stock name record
+html requirements: stockGradeReport.html
+"""
+
+"""
+SQL Table: produce
+	1	ProdID Primary	int(11)			No	None		AUTO_INCREMENT	Change Change	Drop Drop	
+	2	StockID	int(11)			No	None			Change Change	Drop Drop	
+	3	Type	varchar(100)	utf8mb4_general_ci		No	None			Change Change	Drop Drop	
+	4	Image	blob			No	None			Change Change	Drop Drop	
+	5	Grade	int(11)			No	None			Change Change	Drop Drop	
+"""
+
+
+
+@app.route('/stockGradeRecords/<name>')  
+def viewStockGradeRecords(name):
+	 # remove this
+	conn = connectToDB()
+	if not conn:
+		return redirect(url_for('produceRecords'))
+	if conn:
+		# get the date from the stock table
+		cursor = conn.cursor(dictionary=True)
+		query = "SELECT * FROM stock WHERE Name = %s AND UserID = %s"
+		cursor.execute(query, (name, session['user_id']))
+		result = cursor.fetchone()
+		date = result['Date']
+		stock_id = result['StockID']
+		pass
+
+		# get the records from the produce table that match the StockID
+		cursor = conn.cursor(dictionary=True)
+		query = "SELECT * FROM produce WHERE StockID = %s"
+		cursor.execute(query, (stock_id,))
+		produce_records = cursor.fetchall()
+
+	return render_template('stockGradeReport.html', produce_records=produce_records, stock_name = name, stock_date = date)
+
+
+
+@app.route('/upload', methods=['POST', 'GET'])
+def upload():
+	# Assuming the file input field in your HTML form has the name 'image'
+	form = UploadForm()
+	if form.validate_on_submit():
+		uploaded_file = form.file.data
+
+		# Open the uploaded image using PIL
+		img = Image.open(uploaded_file)
+
+		# Convert the image to a numpy array
+
+
+		# Convert numpy array to byte stream
+		img_bytes = io.BytesIO()
+		img.save(img_bytes, format='PNG')
+		img_bytes.seek(0)
+		img_data = img_bytes.read()
+
+		# Store the image data in the database
+		conn = connectToDB()
+		cursor = conn.cursor()
+		insert_query = "INSERT INTO images (img_data) VALUES (%s)"
+		cursor.execute(insert_query, (img_data,))
+		conn.commit()
+
+		# Close database connection and cursor
+		cursor.close()
+		flash('Image uploaded successfully', 'success')
+
+	return render_template('upload.html', form=form)
+
+
+
+##################################################### Stock Record Functions  End ##############################################################
+######################################################################################################################################################
+
+
+
+@app.route('/get_flashed_messages', methods=['GET'])
+def get_flashed_messages():
+	messages = session.pop('_flashes', [])
+	return render_template('flash_messages.html',messages=messages)
 
 def connectToDB():
     connection = mysql.connector.connect(
