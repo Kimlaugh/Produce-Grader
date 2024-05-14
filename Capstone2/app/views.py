@@ -4,14 +4,21 @@ from flask import render_template, request, redirect, url_for, flash, session, a
 from flask_login import login_user, logout_user, current_user, login_required
 from werkzeug.utils import secure_filename
 from app.models import UserProfile
-from app.forms import LoginForm, UploadForm
+from app.forms import LoginForm, UploadForm, RegisterForm
 from flask import send_from_directory
 from flask_login import logout_user
 from datetime import datetime
 import secrets
+import mysql.connector
+import os
+import shutil
+import base64
+import re
+from email import message_from_string
+from flask import Flask, request, jsonify
 # from . import agrirate 
-
-
+from . import classifcation_model
+from . import Produce_Grading
 
 
 
@@ -33,72 +40,306 @@ from werkzeug.security import check_password_hash
 def home():
     """Render website's home page."""
 
-    return render_template('capstoneHome.html')
+    # return render_template('capstoneHome.html')
+    return render_template('home.html', name="Test")
 
+@app.route('/home')
+def mainPage():
+    global user_stock
+    user_stock = []
+    """Render website's home page."""
+
+    # Directory path
+    images_directory = "app/static/images"
+
+    # Get list of all files in the directory
+    files = os.listdir(images_directory)
+
+    # Iterate through each file
+    for file in files:
+        # Check if file is an image and contains the word "side" in its filename
+        if file.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')) and 'side' in file.lower():
+            # Construct full path to the file
+            file_path = os.path.join(images_directory, file)
+            try:
+                # Remove the file
+                os.remove(file_path)
+                print(f"Deleted: {file_path}")
+            except OSError as e:
+                print(f"Error deleting {file_path}: {e}")
+
+    # return render_template('capstoneHome.html')
+    return render_template('home.html', name="Test")
 
 @app.route('/about/')
 def about():
     """Render the website's about page."""
     return render_template('about.html', name="Mary Jane")
 
-@app.route('/register/')
-def register():
-    return render_template('register.html')
+@app.route('/register/', methods=['POST', 'GET'])
+def register():    
+    form = RegisterForm()
+    if request.method == 'POST':
+        if not form.validate_on_submit():
+            
+            return render_template('register.html', form=form)
+        else:
+            conn = connectToDB()
+            if conn:
+                cursor = conn.cursor()
+                cursor.execute("INSERT INTO user (FName, LName, Email, Password) VALUES (%s, %s, %s, %s)", (form.firstname.data, form.lastname.data, form.email.data, form.password.data))
+                conn.commit()
+                cursor.close()
+                conn.close()
+            flash('Record was successfully added')
+           
+            return render_template('home.html', name = form.firstname.data)
+    return render_template('register.html', form=form)
 
 
 @app.route('/upload', methods=['POST', 'GET'])
 # @login_required
 def upload():
-    
-    # Instantiate your form class
-    form = UploadForm()
-    # Validate file upload on submit
-    if form.validate_on_submit():
-        # Get file data and save to your uploads folder
-        uploadedPhoto = form.file.data # we could also use request.files['photo']
-        filename = secure_filename(uploadedPhoto.filename)
-       
-        uploadedPhoto.save(os.path.join(
-            app.config['UPLOAD_FOLDER'], filename
-        ))
-          
-        flash('File upload sucessfully', 'success')
-        return redirect(url_for('home')) # Update this to redirect the user to a route that displays all uploaded image files
+    return render_template('upload.html', grad_type = "single")
 
-    return render_template('upload.html', form =form)
+@app.route('/upload/stock', methods=['POST', 'GET'])
+# @login_required
+def uploadStock():
+    return render_template('upload.html', grad_type = "stock")
+
+@app.route('/save', methods=['POST'])
+def save():
+    if request.method == 'POST':
+        # Get the image paths from the request
+        data = request.get_json()
+        image_data_uris = data.get('imagePaths', [])
+        
+        folder = "input_folder"
+        if not os.path.exists(folder):
+            os.makedirs(folder)
+        else:
+            # Clear the contents of the folder
+            for file_name in os.listdir(folder):
+                file_path = os.path.join(folder, file_name)
+                try:
+                    if os.path.isfile(file_path):
+                        os.unlink(file_path)
+                except Exception as e:
+                    print(f"Failed to delete {file_path}. Reason: {e}")
+
+        for i, image_data_uri in enumerate(image_data_uris):
+            # Decode Base64 image data
+            header, image_data = image_data_uri.split(',', 1)
+
+            # Parse header to extract filename
+            # Extract filename from URI
+            filename_match = re.search(r'filename=([^;]+)', image_data_uri)
+            filename = filename_match.group(1) if filename_match else None
+            print(filename)
+
+            image_binary = base64.b64decode(image_data)
+
+            # Determine the file name based on the image index
+            if i == 0:
+                new_image_name = "produce_top.jpg"
+                # keywords = ["tomato", "carrot", "pepper"]
+                # matched_keyword = next((keyword for keyword in keywords if keyword in filename), None)
+                # if matched_keyword:
+                #     new_image_name = matched_keyword + "_top.jpg"
+            else:
+                new_image_name = f"produce_side{i}.jpg"
+                # keywords = ["tomato", "carrot", "pepper"]
+                # matched_keyword = next((keyword for keyword in keywords if keyword in filename), None)
+                # if matched_keyword:
+                #     new_image_name = matched_keyword + f"_side{i}.jpg"
+                # new_image_path = os.path.join(folder, new_image_name)
+                # img_for_classification = new_image_path
+
+            # Save the image to the folder
+            new_image_path = os.path.join(folder, new_image_name)
+            with open(new_image_path, 'wb') as f:
+                f.write(image_binary)
+
+        return jsonify({'message': 'Images received and saved successfully'}), 200
+
+    # return render_template('home.html')
+
+
+@app.route('/grade')
+def grade():
+    # List all files in the input folder
+    folder_path = 'input_folder'
+    img_for_classification = ''
+
+    files = os.listdir(folder_path)
+    # Look for a JPG file containing the word "side" in its name
+    side_image = None
+    for file in files:
+        if file.lower().endswith('.jpg') and 'side' in file.lower():
+            side_image = os.path.join(folder_path, file)
+            file_name = file
+            break
+    
+    if side_image is None:
+        print("No JPG file with 'side' in its name found.")
+    else:
+        # print("Found side image:", side_image)
+        img_for_classification = side_image
+        absolute_path = os.path.abspath(side_image)
+
+
+    class_result = classifcation_model.predictor(img_for_classification,3,700)
+    grade_result = img_for_classification
+    keywords = ["tomato", "carrot", "pepper"]
+    matched_keyword = next((keyword for keyword in keywords if keyword in file_name), None)
+    print(matched_keyword)
+    if class_result['status'] == "success" or class_result['content'] == "Confidence":
+        if (class_result['content'] == "Confidence"):
+            produce_type = "pepper"
+        else:
+            produce_type = class_result['content']
+        print (produce_type)
+        grade_result = Produce_Grading.GetGrades(produce_type, folder_path)
+        # time.sleep(2)
+        # Define paths
+        input_folder = "input_folder"  # Change this to the actual name of your input folder
+        output_folder = "app/static/images"  # The destination folder inside the static folder
+        image_filename = file_name  # The name of the image file you want to copy
+
+        # Ensure output folder exists, if not create it
+        os.makedirs(output_folder, exist_ok=True)
+
+        # Construct full paths
+        source_path = os.path.join(input_folder, image_filename)
+        destination_path = os.path.join(output_folder, image_filename)
+
+        # Copy the image file
+        shutil.copyfile(source_path, destination_path)
+
+        grade_result['type'] = produce_type.upper()
+        grade_result['img'] = file_name
+
+        return render_template("singleSummary.html", grade=grade_result)
+    else:
+        flash("This is not a recognised Produce")
+        print (class_result['content'])
+        return render_template('upload.html', grad_type = "single")
+    
+user_stock = []
+
+@app.route('/grade/stock')
+def gradeStock():
+    global user_stock
+    # List all files in the input folder
+    folder_path = 'input_folder'
+    img_for_classification = ''
+
+    files = os.listdir(folder_path)
+    # Look for a JPG file containing the word "side" in its name
+    side_image = None
+    for file in files:
+        if file.lower().endswith('.jpg') and 'side' in file.lower():
+            side_image = os.path.join(folder_path, file)
+            file_name = file
+            break
+    
+    if side_image is None:
+        print("No JPG file with 'side' in its name found.")
+    else:
+        # print("Found side image:", side_image)
+        img_for_classification = side_image
+        absolute_path = os.path.abspath(side_image)
+
+
+    class_result = classifcation_model.predictor(img_for_classification,3,700)
+    grade_result = img_for_classification
+    keywords = ["tomato", "carrot", "pepper"]
+    matched_keyword = next((keyword for keyword in keywords if keyword in file_name), None)
+    if class_result['status'] == "success" or class_result['content'] == "Confidence":
+        if (class_result['content'] == "Confidence"):
+            # print (matched_keyword)
+            produce_type = "pepper"
+        else:
+            produce_type = class_result['content']
+        print (produce_type)
+        # return render_template("StockSummary.html", grade=user_stock)
+        grade_result = Produce_Grading.GetGrades(produce_type, folder_path)
+        # time.sleep(2)
+        # Define paths
+        input_folder = "input_folder"  # Change this to the actual name of your input folder
+        output_folder = "app/static/images"  # The destination folder inside the static folder
+        image_filename = file_name  # The name of the image file you want to copy
+
+        # Ensure output folder exists, if not create it
+        os.makedirs(output_folder, exist_ok=True)
+
+        # Split the file name into base name and extension
+        base_name, extension = file_name.rsplit('.', 1)
+
+        new_file_name = base_name+"_"+str(len(user_stock))+"."+extension
+
+        # Construct full paths
+        source_path = os.path.join(input_folder, image_filename)
+        destination_path = os.path.join(output_folder, new_file_name)
+
+        # Copy the image file
+        shutil.copyfile(source_path, destination_path)
+
+        
+
+        # Insert the number before the extension
+        
+        grade_result['type'] = produce_type.upper()
+        grade_result['img'] = new_file_name
+        user_stock.append(grade_result)
+        return render_template("StockSummary.html", grade=user_stock[-1])
+    else:
+        flash("This is not a recognised Produce")
+        print (class_result['content'])
+        return render_template('upload.html', grad_type = "stock")
+            
+        
+
+    
+    
 
 
 @app.route('/login', methods=['POST', 'GET'])
 def login():
-    form = LoginForm()
-    # change this to actually validate the entire form submission
     
-    if form.validate_on_submit():
-        # Get the username and password values from the form.
-        username = form.username.data
-        password = form.password.data
-    
-        # Then store the result of that query to a `user` variable so it can be
-        user = UserProfile.query.filter_by(username=username).first()
-        
-        # and password submitted. Remember you need to compare the password hash.  
-        # passed to the login_user() method below.  
-        if user and check_password_hash(user.password, password):
-            # Log in the user
-            # Gets user id, load into session
-            login_user(user)     
+    email = request.form['email']
+    password = request.form['password']
 
-            # Remember to flash a message to the user
-            flash('Login successful!', 'success')
-            return redirect(url_for("upload"))  # The user should be redirected to the upload form instead
+    print ("Login info", email, password)
+    conn = connectToDB()
+
+    if (conn):
+        cursor = conn.cursor(dictionary=True)
+        query = "SELECT * FROM user WHERE Email = %s AND Password = %s"
+        cursor.execute(query, (email, password))
+        row = cursor.fetchone()
+        if row:
+            fname = row["FName"]
+            cursor.close()
+            conn.close()
+            return render_template("home.html", name = fname)
         else:
-            flash('Invalid username or password', 'error')
-            # return redirect(url_for('login'))
+            cursor.close()
+            conn.close()
+            flash('Invalid username or password. Please try again.', 'error')
+            return render_template("capstoneHome.html")
         
-    return render_template("login.html", form=form)
+        
+    else:
+        flash('Eerror connecting to database', 'error')
+        return render_template("capstoneHome.html")
+        
+    # return render_template("login.html", form=form)
 
+@app.route('/selection')
+def selection():
+    return render_template("produceGrader1.html")
 
-import os
 
 
 def get_uploaded_images():
@@ -129,6 +370,8 @@ def get_image(filename):
 def files():
     images_ = get_uploaded_images()
     return render_template('files.html', images=images_)
+
+
 
 
 @app.route('/logout')
@@ -178,3 +421,21 @@ def add_header(response):
 def page_not_found(error):
     """Custom 404 page."""
     return render_template('404.html'), 404
+
+def connectToDB():
+    connection = mysql.connector.connect(
+    host="localhost",
+    user="agrirate",
+    password="password",
+    database="capstone"
+    )
+    
+    try:
+        # update to connect database -- update_done
+        if connection.is_connected():
+            print("Connected to MySQL Server")
+            return connection
+
+    except mysql.connector.Error as e:
+        print(f"Error connecting to MySQL Server: {e}")
+        return False

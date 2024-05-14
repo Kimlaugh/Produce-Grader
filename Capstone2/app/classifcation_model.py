@@ -7,7 +7,7 @@ import warnings
 warnings.filterwarnings('ignore')
 
 from keras.models import load_model
-model = keras.models.load_model(r"C:\Users\calvin\Downloads\UWI\Year 3\Semester 2\Capstone2\app\pretrained_model.h5") 
+model = keras.models.load_model(r"app/pretrained_model.h5") 
 
 class_map = {0: 'carrot', 1: 'pepper', 2: 'tomato'}
 image_categories = ['carrot','pepper','tomato']
@@ -85,7 +85,7 @@ def predictor(img_path, loop, crop_width_height):
         # Check if the maximum confidence is below the threshold
         if np.max(prediction) < threshold:
             return {'status': "error",
-                    'content': "The image is not close to what the model has been trained on."}
+                    'content': "Confidence"}
         else:
             # Get the class with the highest confidence
             predicted_class = np.argmax(prediction)
@@ -97,7 +97,7 @@ def predictor(img_path, loop, crop_width_height):
     except Exception as e:
         # print(f"An error occurred: {e}")
         return {'status': "error",
-                    'content': "{e}"}
+                    'content': e}
 
 # counter = 0
 # # while (counter < 5):

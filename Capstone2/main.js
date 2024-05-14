@@ -40,7 +40,7 @@ function createWindow() {
     }
 ]);
 
-  Menu.setApplicationMenu(menu);
+  // Menu.setApplicationMenu(menu);
  
 }
 

@@ -5,7 +5,7 @@ import mysql.connector
 import re
 import os
 import shutil
-import classifcation_model
+from . import classifcation_model
 import Produce_Grading
 import time
 

@@ -714,6 +714,167 @@ def FindShape_Side_Carrot(img ,main_contour, width):
 
     return {'Sim_score':match_value}
 
+def CheckAppearance(produce_type, segmented_img):
+    def total_pixel_count(img_rgb):
+        # Convert segmented image from RGB to grayscale
+        segmented_img_gray = cv2.cvtColor(img_rgb, cv2.COLOR_RGB2GRAY)
+
+        # Count the number of non-zero pixels (pixels that are not black)
+        total_num_pixels = np.count_nonzero(segmented_img_gray)
+        return total_num_pixels
+
+
+    def image_blemish_mask(img_rgb, produce_type):
+        # Convert segmented image from RGB to HSV color space
+        segmented_img_hsv = cv2.cvtColor(img_rgb, cv2.COLOR_RGB2HSV)
+
+        # Define lower and upper threshold values for tomato red in HSV color space
+        if produce_type == "tomato":
+            lower_gray = np.array([0, 0, 0])  # Lower threshold for low saturation and mid-value
+            upper_gray = np.array([256, 200, 200 ])
+            # print("tomato")
+        elif produce_type == 'carrot':
+            lower_gray = np.array([0, 0, 0])  # Lower threshold for low saturation and mid-value
+            upper_gray = np.array([256, 200, 200 ])
+        else:
+            lower_gray = np.array([0, 0, 20])  # Lower threshold for low saturation and mid-value
+            upper_gray = np.array([180, 250, 180])
+
+        # Create a mask based on the threshold values
+        mask = cv2.inRange(segmented_img_hsv, lower_gray, upper_gray)
+
+        # Apply the mask to the segmented image
+        segmented_img_blemish = cv2.bitwise_and(img_rgb, img_rgb, mask=mask)
+
+
+        ###################################
+        # Display the segmented image containing tomato red pixels (can keep this one)
+
+
+        segmented_img_gray = cv2.cvtColor(segmented_img_blemish, cv2.COLOR_RGB2GRAY)
+
+        # Count the number of non-zero pixels (pixels that are not black)
+        black_spot_num_pixels = np.count_nonzero(segmented_img_gray)
+
+
+        # return segmented_img_red
+        return black_spot_num_pixels, segmented_img_blemish
+    
+    def count_tomato_pixels(image_path):
+        # Read the image
+        image = image_path
+
+        # Convert the image from BGR to HSV color space
+        hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+
+        # Define lower and upper bounds for tomato red color in HSV
+        lower_red = np.array([110, 100, 50])
+        upper_red = np.array([200, 255, 255])
+
+        # Threshold the HSV image to get only tomato red colors
+        mask = cv2.inRange(hsv, lower_red, upper_red)
+        # show_image(mask,'pp','')
+        # Find contours in the mask
+        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+        # Initialize a variable to count the number of tomato red pixels
+        tomato_pixel_count = 0
+
+        # Iterate through the contours
+        for contour in contours:
+            # Calculate the area of each contour
+            area = cv2.contourArea(contour)
+            # Increment the tomato pixel count by the area of the contour
+            tomato_pixel_count += area
+
+        return tomato_pixel_count,mask
+
+    def unripe_tomato_pixels(img):
+        # Read the image
+        image = img
+
+        # Convert the image from BGR to HSV color space
+        hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+
+        # Define lower and upper bounds for tomato red color in HSV
+        # lower_red = np.array([0, 50, 19])
+        # upper_red = np.array([30, 200, 200])
+
+        # lower_red = np.array([30, 200, 200])
+        # upper_red = np.array([80, 200, 200])
+
+        lower_red = np.array([10, 100,30])
+        upper_red = np.array([250, 150, 250])
+
+        lower_red = np.array([35, 50, 50])
+        upper_red = np.array([100, 255, 255])
+
+        # Threshold the HSV image to get only tomato red colors
+        mask = cv2.inRange(hsv, lower_red, upper_red)
+
+
+        # Find contours in the mask
+        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+        # Initialize a variable to count the number of tomato red pixels
+        tomato_pixel_count = 0
+
+        # Iterate through the contours
+        for contour in contours:
+            # Calculate the area of each contour
+            area = cv2.contourArea(contour)
+            # Increment the tomato pixel count by the area of the contour
+            tomato_pixel_count += area
+
+        return tomato_pixel_count,mask
+
+    
+    def show_image(image_,description, save_ = False):
+        # Plot the segmented image
+        plt.subplot(1, 3, 3)
+        plt.imshow(image_)
+        plt.title(description)
+        plt.axis('off')
+        plt.show()
+
+    
+
+    blemish_pixels, blemish_img = image_blemish_mask(segmented_img,produce_type)
+    total_pixels = total_pixel_count(segmented_img)
+
+    # possible display/ save/ ...
+    # show_image(segmented_img, 'segmentated img', save_ = False)
+    # show_image(blemish_img, 'blemish region', save_ = False)
+    # show_image(count_tomato_pixels(blemish_img)[1],'restore pixels',save_ = False)
+    # show_image(unripe_tomato_pixels(segmented_img)[1], 'unriped region', save_= False)
+
+    if produce_type == 'tomato':
+        # calculatting blemish percentage for tomato
+        
+        total_blemish = max(0,blemish_pixels - count_tomato_pixels(blemish_img)[0]) + unripe_tomato_pixels(segmented_img)[0]
+    else:
+        # calculatting blemish percentage
+        total_blemish = blemish_pixels
+    
+    total_pixels = total_pixel_count(segmented_img)
+    blemish_pixels, blemish_img = image_blemish_mask(segmented_img, produce_type)
+    percentage = (blemish_pixels / total_pixel_count(segmented_img)) * 100
+
+    # Plot the original image and the blemish mask overlay
+    # fig, axes = plt.subplots(1, 2, figsize=(12, 6))
+    # axes[0].imshow(segmented_img)
+    # axes[0].set_title('Original Image')
+    # axes[0].axis('off')
+    
+    # axes[1].imshow(blemish_img)
+    # axes[1].set_title('Blemish Mask Overlay')
+    # axes[1].axis('off')
+    
+    # plt.show()
+
+
+    return [total_pixels, total_blemish]
+
 def FindShape_Side_Pepper(img,main_contour):
     # Calculate centroid
     M = cv2.moments(main_contour)
@@ -761,64 +922,6 @@ def FindShape_Side_Pepper(img,main_contour):
 
     # print("Symmetry Metric:", symmetry_metric)
     return {'Sym': symmetry_metric}
-
-def CheckAppearance(produce_type, segmented_img):
-    def total_pixel_count(img_rgb):
-        # Convert segmented image from RGB to grayscale
-        segmented_img_gray = cv2.cvtColor(img_rgb, cv2.COLOR_RGB2GRAY)
-
-        # Count the number of non-zero pixels (pixels that are not black)
-        total_num_pixels = np.count_nonzero(segmented_img_gray)
-        return total_num_pixels
-
-
-    def image_blemish_mask(img_rgb, produce_type):
-        # Convert segmented image from RGB to HSV color space
-        segmented_img_hsv = cv2.cvtColor(img_rgb, cv2.COLOR_RGB2HSV)
-
-        # Define lower and upper threshold values for tomato red in HSV color space
-        if produce_type == "tomato":
-            lower_gray = np.array([0, 0, 0])  # Lower threshold for low saturation and mid-value
-            upper_gray = np.array([256, 200, 200])
-        elif produce_type == 'carrot':
-            lower_gray = np.array([0, 0, 0])  # Lower threshold for low saturation and mid-value
-            upper_gray = np.array([256, 200, 200])
-        else:
-            lower_gray = np.array([0, 0, 20])  # Lower threshold for low saturation and mid-value
-            upper_gray = np.array([180, 250, 180])
-
-        # Create a mask based on the threshold values
-        mask = cv2.inRange(segmented_img_hsv, lower_gray, upper_gray)
-
-        # Apply the mask to the segmented image
-        segmented_img_blemish = cv2.bitwise_and(img_rgb, img_rgb, mask=mask)
-
-        # Convert to grayscale
-        segmented_img_gray = cv2.cvtColor(segmented_img_blemish, cv2.COLOR_RGB2GRAY)
-
-        # Count the number of non-zero pixels (pixels that are not black)
-        black_spot_num_pixels = np.count_nonzero(segmented_img_gray)
-
-        return black_spot_num_pixels, segmented_img_blemish
-    
-    total_pixels = total_pixel_count(segmented_img)
-    blemish_pixels, blemish_img = image_blemish_mask(segmented_img, produce_type)
-    percentage = (blemish_pixels / total_pixel_count(segmented_img)) * 100
-
-    # # Plot the original image and the blemish mask overlay
-    # fig, axes = plt.subplots(1, 2, figsize=(12, 6))
-    # axes[0].imshow(cv2.cvtColor(segmented_img, cv2.COLOR_BGR2RGB))
-    # axes[0].set_title('Original Image')
-    # axes[0].axis('off')
-    
-    # axes[1].imshow(cv2.cvtColor(blemish_img, cv2.COLOR_BGR2RGB))
-    # axes[1].set_title('Blemish Mask Overlay')
-    # axes[1].axis('off')
-    
-    # plt.show()
-
-
-    return [total_pixels, blemish_pixels]
 
 def getImgs(input_folder):
     # List all files in the directory
@@ -871,7 +974,7 @@ def GetGrades(pType, input_folder):
             
             if (view == ref_local):
                 img, pixel_conversion = FindReference(img)
-                print (pixel_conversion)
+                # print (pixel_conversion)
                 main_contour, segment_img = SegmentImage(img)
                 size['diameter'] = CalcSize_Tomato(img, main_contour, pixel_conversion)
                 shape['top'] = FindShape_Top(img, main_contour)
@@ -880,11 +983,13 @@ def GetGrades(pType, input_folder):
                 sView = 'side_'+ str(x)
                 main_contour, segment_img = SegmentImage(img)
                 shape[sView] = FindShpae_Side_Tomato(img, main_contour)
+                total, blemish= CheckAppearance(pType, segment_img)
+                print (total)
+                final_total_pixels+=total
+                final_total_blemish+=blemish
 
-            total, blemish= CheckAppearance(pType, segment_img)
-            final_total_pixels+=total
-            final_total_blemish+=blemish
-        blemish_percentage = 100 - ((final_total_blemish/final_total_pixels) * 100)
+            
+        blemish_percentage = (final_total_blemish/final_total_pixels) * 100
 
         # Average the shape values for side views
         Sym1 = shape['side_1']['Sym']
@@ -899,13 +1004,16 @@ def GetGrades(pType, input_folder):
         final_CV = np.round(shape['top']['CV'],6)
 
         grades_val = {
+            'type': pType,
             'size': np.round(size['diameter'],6),
             'shape_top': final_CV,
             'shape_side': [final_Sym, final_E],
             'appearance': blemish_percentage
         }
 
-        return grades_val
+        grade = getLetterGrade(pType, grades_val)
+        # return grades_val
+        return grade
 
     elif pType == "carrot":
         img_info = getImgs(input_folder)
@@ -944,10 +1052,10 @@ def GetGrades(pType, input_folder):
                 # print (size['diameter']/width)
                 sView = 'side_'+ str(x)
                 shape[sView] = FindShape_Side_Carrot(img ,main_contour, width)
-            
-            total, blemish= CheckAppearance(pType, segment_img)
-            final_total_pixels+=total
-            final_total_blemish+=blemish
+                total, blemish= CheckAppearance(pType, segment_img)
+                print (total)
+                final_total_pixels+=total
+                final_total_blemish+=blemish
         
         blemish_percentage = 100 - ((final_total_blemish/final_total_pixels) * 100)
         
@@ -960,17 +1068,21 @@ def GetGrades(pType, input_folder):
         final_CV = np.round(shape['top']['CV'],6)
 
         grades_val = {
-            'size': np.round(size['diameter'],6),
+            'type': pType,
+            'size': [np.round(size['length'],6),np.round(size['diameter'],6)],
             'shape_top': final_CV,
             'shape_side': final_SimScore,
             'appearance': blemish_percentage
         }
-        return grades_val
+        grade = getLetterGrade(pType, grades_val)
+        return grade
     
     elif pType == "pepper":
         img_info = getImgs(input_folder)
         ref_local = "top"
         total_percentage = 0
+        final_total_pixels=0
+        final_total_blemish=0
         # sView = 'side_1'
         x = 0
         # print (img_info)
@@ -990,12 +1102,14 @@ def GetGrades(pType, input_folder):
             else:
                 x+=1
                 main_contour, segment_img = SegmentImage(img)
-                shape[sView] = FindShape_Side_Pepper(img, main_contour)
                 sView = 'side_'+ str(x)
+                shape[sView] = FindShape_Side_Pepper(img, main_contour)
+                total, blemish= CheckAppearance(pType, segment_img)
+                print (total)
+                final_total_pixels+=total
+                final_total_blemish+=blemish
 
-            total, blemish= CheckAppearance(pType, segment_img)
-            final_total_pixels+=total
-            final_total_blemish+=blemish
+            
         
         blemish_percentage = 100 - ((final_total_blemish/final_total_pixels) * 100)
 
@@ -1007,9 +1121,182 @@ def GetGrades(pType, input_folder):
         final_CV = np.round(shape['top']['CV'],6)
 
         grades_val = {
+            'type': pType,
             'size': np.round(size['diameter'],6),
             'shape_top': final_CV,
             'shape_side': final_SimScore,
             'appearance': blemish_percentage
         }
-        return grades_val
+        grade = getLetterGrade(pType, grades_val)
+        return grade
+        
+def getLetterGrade(pType,grade_values):
+    #Pull criteria from db here shuold be in form
+
+    #TOMATO
+    # size = [d1, d2, d3]
+    # shape = [[cv1, cv2, cv3],[s1, s2, s3], [e1, e2, e3]]
+    # app = [a1, a2, a3]
+
+    #CARROT
+    # size = [[d1, d2, d3],[l1, l2, l3]]
+    # shape = [[cv1, cv2, cv3],[ss1, ss2, ss3]]
+    # app = [a1, a2, a3]
+
+    #TOMATO
+    # size = [d1, d2, d3]
+    # shape = [[cv1, cv2, cv3],[s1, s2, s3]]
+    # app = [a1, a2, a3]
+
+    def assignGrade(crit, val, order):
+        g = 0
+        if order == "asc":
+            if val >= crit[0]:
+                g = 1
+            elif val < crit[0] and val >= crit[1]:
+                g = 2
+            elif val < crit[1] and crit[2]>=4:
+                g =3
+            else:
+                g = 4
+        elif order == "desc":
+            if val <= crit[0]:
+                g = 1
+            elif val > crit[0] and val <= crit[1]:
+                g = 2
+            elif val > crit[1] and crit[2]<=4:
+                g =3
+            else:
+                g = 4
+        return g
+
+    if pType == "tomato":
+        #get criterias for that criteria
+        cri_size = [6.8, 4.4, 4]
+        cri_shape = [[1.3, 2.5, 3.5],[0.15, 0.2, 0.3],[0.3, 0.6, 0.8]]
+        cri_app = [3, 8, 15]
+        
+        #finding size grade
+        size = grade_values['size']
+        order = "asc"
+
+        size_grade = assignGrade(cri_size, size, order)
+
+        #finding shape grade
+        shape_cv = grade_values['shape_top']
+        shape_sym = grade_values['shape_side'][0]
+        shape_e = grade_values['shape_side'][1]
+        order = "desc"
+
+        shape_grade = []
+        shape_grade += [assignGrade(cri_shape[0], shape_cv, order)]
+        shape_grade += [assignGrade(cri_shape[1], shape_sym, order)]
+        shape_grade += [assignGrade(cri_shape[2], shape_e, order)]
+        # print (shape_grade)
+        shape_grade_fin = max(shape_grade)
+
+        #finding app grade
+        app = grade_values['appearance']
+        order = "desc"
+
+        app_grade = assignGrade(cri_app, app, order)
+
+        # print (size_grade, shape_grade_fin, app_grade)
+        return {
+                'type': grade_values['type'],
+                'size': size_grade,
+                'shape': shape_grade_fin,
+                'app_grade': app_grade,
+                'final': max(size_grade, shape_grade_fin, app_grade)
+        }
+
+        # return max(size_grade, shape_grade_fin, app_grade)
+    
+    
+    elif pType == "carrot":
+        #get criterias for that criteria
+        cri_size = [[12, 12, 8], [2.5,2,1]]
+        cri_shape = [[2.5, 3.5, 4],[0.3, 0.75, 0.1]]
+        cri_app = [8, 15, 23]
+        
+        #finding size grade
+        size_l = grade_values['size'][0]
+        size_d = grade_values['size'][1]
+        order = "asc"
+
+        size_grade = []
+        size_grade +=[assignGrade(cri_size[0], size_l, order)]
+        size_grade +=[assignGrade(cri_size[1], size_d, order)]
+        size_grade_fin = max(size_grade)
+
+        #finding shape grade
+        shape_cv = grade_values['shape_top']
+        shape_ss = grade_values['shape_side']
+        order = "desc"
+
+        shape_grade = []
+        shape_grade +=[assignGrade(cri_shape[0], shape_cv, order)]
+        shape_grade +=[assignGrade(cri_shape[1], shape_ss, order)]
+        shape_grade_fin = max(shape_grade)
+
+        #finding app grade
+        app = grade_values['appearance']
+        order = "desc"
+
+        app_grade = assignGrade(cri_app, app, order)
+
+        # print (size_grade_fin, shape_grade_fin, app_grade)
+        return {
+                'type': grade_values['type'],
+                'size': size_grade_fin,
+                'shape': shape_grade_fin,
+                'app_grade': app_grade,
+                'final': max(size_grade_fin, shape_grade_fin, app_grade)
+        }
+        # return max(size_grade_fin, shape_grade_fin, app_grade)
+    
+    elif pType == "pepper":
+        #get criterias for that criteria
+        cri_size = [7.6, 6.4, 5.1]
+        cri_shape = [[3, 4, 5.5],[0.15, 0.3, 0.4]]
+        cri_app = [3, 8, 15]
+        
+        #finding size grade
+        size = grade_values['size']
+        order = "asc"
+
+        size_grade = assignGrade(cri_size, size, order)
+
+        #finding shape grade
+        shape_cv = grade_values['shape_top']
+        shape_sym = grade_values['shape_side']
+        order = "desc"
+
+        shape_grade = []
+        shape_grade +=[assignGrade(cri_shape[0], shape_cv, order)]
+        shape_grade +=[assignGrade(cri_shape[1], shape_sym, order)]
+        shape_grade_fin = max(shape_grade)
+
+        #finding app grade
+        app = grade_values['appearance']
+        order = "desc"
+
+        app_grade = assignGrade(cri_app, app, order)
+
+        # print(size_grade, shape_grade_fin, app_grade)
+        return {
+                'type': grade_values['type'],
+                'size': size_grade,
+                'shape': shape_grade_fin,
+                'app_grade': app_grade,
+                'final': max(size_grade, shape_grade_fin, app_grade)
+        }
+    
+    
+    
+
+
+
+        
+
+        

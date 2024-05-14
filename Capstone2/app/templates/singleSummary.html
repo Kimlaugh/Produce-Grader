@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Produce Grader</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .banner {
+            background-color: #28a745;
+            color: #fff;
+            padding: 10px 0;
+            text-align: center;
+        }
+        .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .container2 {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start; /* Align items to the top */
+            align-items: center;
+        }
+
+        .centered {
+            text-align: center; /* Horizontally center text */
+            display: flex; /* Use flexbox for centering */
+            flex-direction: column;
+            justify-content: center; /* Horizontally center child elements */
+            align-items: center; /* Vertically center child elements */
+            height: 100vh; /* Optionally, set height to make the div full height */
+            
+        }
+
+        .grades{
+            background-color: rgb(239, 239, 239);
+            box-shadow: 2px 2px 4px 2px rgba(0, 0, 0, 0.2);
+            padding: 10px;
+            /* margin-bottom: 20px; */
+            height: 400px;
+            width: 300px;
+        }
+
+
+        .banner h1 {
+            margin: 0;
+        }
+
+        .label {
+            font-family: Arial;
+            font-size: 12px;
+        }
+
+        .subtitle {
+            font-family: Arial;
+            font-size: 14px;
+            color: #BF3100;
+        }
+        p{
+            font-size: 22px;
+            
+        }
+
+        .content {
+            width: 700px;
+            margin: 20px auto;
+        }
+
+        .button {
+            padding: 10px 50px;
+            background-color: #FFB316;
+            color: #264D10;
+            border: none;
+            cursor: pointer;
+        }
+
+        .button:hover {
+            background-color: #FFD966;
+        }
+
+        .image {
+            /* margin-top: 10px; */
+            /* width: 200px; */
+            height: 400px;
+            margin: 10px;
+        }
+        .home {
+            background-color: #BF3100;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            margin-top: 20px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="banner">
+        <div class="container">
+            <h1 class="text-md-left text-center">AgriRate</h1>
+            <button class="home" onclick="backToHome()">Home</button>
+        
+        </div>
+    </div>
+    <div class="centered">
+        <div class="container2">
+            <img class="image" src="../static/images/{{grade['img']}}" alt="Segmented Image">
+            <div class="grades">
+                <p style="font-weight: bold; font-size: 30px; color:#BF3100; margin-bottom: 35px;">{{grade['type']}}</p>
+                <p>GRADE BREAKDOWN</p>
+                <p>Size: {{grade['size']}}</p>
+                <p>Shape: {{grade['shape']}}</p>
+                <p>Appearance: {{grade['app_grade']}}</p>
+                <p style="font-weight: bold;">Final Grade {{grade['final']}}</p>
+            </div>
+        </div>
+        <button class="button" onclick="backToHome()">Done</button>
+    </div>
+    <script>
+        function backToHome() {
+        window.location.href = "{{ url_for('mainPage') }}";
+    }
+    </script>
+</body>
+
+</html>

@@ -14,6 +14,12 @@ class LoginForm(FlaskForm):
 class UploadForm(FlaskForm):
     file = FileField('Upload File', validators=[FileRequired(), FileAllowed(['jpg', 'png'])])
 
+class RegisterForm(FlaskForm):
+    firstname = StringField('First Name', validators=[InputRequired()])
+    lastname = StringField('Last Name', validators=[InputRequired()])
+    email = EmailField('Email', validators=[InputRequired()])
+    password = PasswordField('Password', validators=[InputRequired()])
+
 
 
     
