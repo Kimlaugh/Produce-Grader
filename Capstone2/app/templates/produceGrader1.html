@@ -78,11 +78,11 @@
     <div class="radios">
         <div class="radio_container">
             <input type="radio" id="single" name="gradeMethod" value="Single" checked>
-            <label for="single">Single</label>
+            <label for="single">SINGLE</label>
         </div>
         <div class="radio_container">
             <input type="radio" id="stock" name="gradeMethod" value="Stock">
-            <label for="stock">Stock</label>
+            <label for="stock">STOCK</label>
         </div>
     </div>
     <button class="button" onclick="gradeMethod()">Next</button>
@@ -94,7 +94,7 @@
         if (selected_option === "Single") {
             window.location.href = "{{ url_for('upload') }}";
         } else if (selected_option === "Stock") {
-            window.location.href = "{{ url_for('uploadStock') }}";;
+            window.location.href = "{{ url_for('getStockName') }}";;
         }
     }
 

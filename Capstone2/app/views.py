@@ -19,6 +19,7 @@ from flask import Flask, request, jsonify
 # from . import agrirate 
 from . import classifcation_model
 from . import Produce_Grading
+import datetime
 
 
 
@@ -40,13 +41,29 @@ from werkzeug.security import check_password_hash
 def home():
     """Render website's home page."""
 
-    # return render_template('capstoneHome.html')
-    return render_template('home.html', name="Test")
+    return render_template('capstoneHome.html')
+    # return render_template('home.html', name="Test")
 
 @app.route('/home')
 def mainPage():
     global user_stock
+    global stock_id
+    conn = connectToDB()
+    if conn:
+        cursor = conn.cursor()
+        query = "SELECT * FROM produce WHERE StockID = %s "
+        cursor.execute(query, (stock_id,))
+        rows = cursor.fetchall()
+        count = len(rows)
+        print(count)
+        insert_query = "UPDATE stock SET Count = %s WHERE StockID = %s"
+        cursor.execute(insert_query, (count, stock_id))
+        conn.commit()
+
+        cursor.close()
+        conn.close()
     user_stock = []
+    stock_id = None
     """Render website's home page."""
 
     # Directory path
@@ -95,17 +112,52 @@ def register():
            
             return render_template('home.html', name = form.firstname.data)
     return render_template('register.html', form=form)
-
+@app.route('/stockName', methods=['POST', 'GET'])
+def getStockName():
+    return render_template('StockName.html', grad_type = "single")
 
 @app.route('/upload', methods=['POST', 'GET'])
 # @login_required
 def upload():
     return render_template('upload.html', grad_type = "single")
 
+stock_name = ""
+stock_id = 0
+
 @app.route('/upload/stock', methods=['POST', 'GET'])
 # @login_required
 def uploadStock():
+    global stock_name
+    global user_id
+    stock_name = request.form['stock_name']
+
+    current_date = datetime.datetime.now().date()
+
+    conn = connectToDB()
+    if (conn):
+        cursor = conn.cursor(dictionary=True)
+        query = "INSERT INTO stock (UserID, Name, Count, Date) VALUES (%s, %s, %s, %s)"
+        cursor.execute(query, (user_id, stock_name, 0, current_date))
+        conn.commit()
+
+        # Get the last inserted ID
+        cursor.execute("SELECT LAST_INSERT_ID()")
+        global stock_id
+        stock_id = cursor.fetchone()
+        stock_id = stock_id['LAST_INSERT_ID()']
+        cursor.close()
+        conn.close()
+    else:
+        flash('Eerror connecting to database', 'error')
+
+    
+    print(stock_name)
     return render_template('upload.html', grad_type = "stock")
+
+@app.route('/upload/stockAgain')
+def uploadStockAgain():
+    return render_template('upload.html', grad_type = "stock")
+
 
 @app.route('/save', methods=['POST'])
 def save():
@@ -292,6 +344,19 @@ def gradeStock():
         grade_result['type'] = produce_type.upper()
         grade_result['img'] = new_file_name
         user_stock.append(grade_result)
+
+        conn = connectToDB()
+        global stock_id
+        if (conn):
+            cursor = conn.cursor(dictionary=True)
+            query = "INSERT INTO produce (StockID, Type, Grade) VALUES (%s, %s, %s)"
+            cursor.execute(query, (stock_id, produce_type, grade_result['final']))
+            conn.commit()
+            cursor.close()
+            conn.close()
+        else:
+            flash('Eerror connecting to database', 'error')
+
         return render_template("StockSummary.html", grade=user_stock[-1])
     else:
         flash("This is not a recognised Produce")
@@ -303,7 +368,7 @@ def gradeStock():
     
     
 
-
+user_id = 10
 @app.route('/login', methods=['POST', 'GET'])
 def login():
     
@@ -320,6 +385,8 @@ def login():
         row = cursor.fetchone()
         if row:
             fname = row["FName"]
+            global user_id
+            user_id = row["UserID"]
             cursor.close()
             conn.close()
             return render_template("home.html", name = fname)

@@ -149,6 +149,10 @@
     </div>
 
     <script>
+        function backToHome() {
+            window.location.href = "{{ url_for('home') }}";
+        }
+
       // Function to display selected images
       document.getElementById('uploadButton').disabled = true;
 
