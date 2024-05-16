@@ -1,0 +1,17 @@
+{
+  "name": "my_electron_app",
+  "version": "1.0.0",
+  "description": "Standalone desktop application with Flask embedded in Electron",
+  "main": "main.js",
+  "scripts": {
+    "start": "concurrently \"npm run flask\" \"npm run electron\"",
+    "flask": "flask --debug run",
+    "electron": "electron ."
+  },
+  "author": "Your Name",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^7.0.0",
+    "electron": "^13.6.9"
+  }
+}

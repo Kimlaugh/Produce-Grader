@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Enter Stock Name - AgriRate</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        /* Custom styles */
+        .centered {
+            text-align: center; /* Horizontally center text */
+            display: flex; /* Use flexbox for centering */
+            flex-direction: column;
+            justify-content: center; /* Horizontally center child elements */
+            align-items: center; /* Vertically center child elements */
+            height: 100vh; /* Optionally, set height to make the div full height */
+        }
+
+        .banner {
+            background-color: #28a745;
+            color: #fff;
+            padding: 10px 0;
+            text-align: center;
+        }
+
+        .banner h1 {
+            margin: 0; /* Remove default margin */
+        }
+
+        .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .button {
+            padding: 10px 50px;
+            background-color: #FFB316;
+            color: #264D10;
+            border: none;
+            cursor: pointer;
+        }
+
+        h2 {
+            font-size: 25px;
+            color: #BF3100;
+        }
+
+        .button:hover {
+            background-color: #FFD966;
+        }
+
+        .label {
+            font-size: 25px;
+            color: #BF3100;
+        }
+
+        .subtitle {
+            font-family: Arial;
+            font-size: 14px;
+            color: #BF3100;
+        }
+
+        .content {
+            width: 700px;
+            margin: 20px auto; /* Center the content */
+        }
+
+        .header {
+            display: flex;
+            flex-direction: row;
+        }
+
+        .home {
+            background-color: #BF3100;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            margin-top: 20px;
+            cursor: pointer;
+        }
+
+        #instructionText {
+            font-family: Arial;
+            font-size: 16px;
+            color: #BF3100;
+            margin: 10px;
+            font-weight: bold;
+        }
+
+        /* Hide grade type */
+        #grade_type {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="banner">
+        <div class="container">
+            <h1 class="text-md-left text-center">AgriRate</h1>
+            <button class="home" onclick="backToHome()">Home</button>
+
+        </div>
+    </div>
+
+
+    <div class="centered">
+        <p class="label">Enter the stock name:</p>
+
+        <form id="stockNameForm" action="{{ url_for('uploadStock') }}" method="post" class="form-inline">
+            <div class="form-group mx-sm-3 mb-2">
+                <label for="stock_name" class="sr-only">Stock Name</label>
+                <input type="text" name="stock_name" class="form-control" id="stockName" placeholder="Enter stock name">
+            </div>
+            <button type="submit" class="btn btn-primary mb-2">Save</button>
+        </form>
+    </div>
+
+    <script>
+        // JavaScript code can go here for handling form submission or other actions
+        function backToHome() {
+        window.location.href = "{{ url_for('mainPage') }}";
+        }
+    </script>
+</body>
+
+</html>

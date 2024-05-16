@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+	<title>Stock Report - AgriRate</title>
+	<link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+	<style>
+		/* Custom styles */
+		.banner {
+			background-color: #28a745;
+			color: #fff;
+			padding: 10px 0;
+			text-align: center;
+		}
+		.main {
+			padding: 20px;
+		}
+		.stock-info {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			margin-bottom: 20px;
+		}
+		.stock-name {
+			font-size: 20px;
+			font-weight: bold;
+		}
+		.stock-date {
+			font-style: italic;
+		}
+		.produce-item {
+			display: flex;
+			align-items: center;
+			margin-bottom: 10px;
+		}
+		.produce-img {
+			width: 100px;
+			margin-right: 10px;
+		}
+		.btn-group {
+			margin-top: 20px;
+		}
+
+		.banner_container{
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+
+		}
+		.home {
+			background-color: #BF3100;
+			color: #fff;
+			border: none;
+			padding: 10px 20px;
+			cursor: pointer;
+		}
+		.back {
+			background-color: #bfac00;
+			color: #fff;
+			border: none;
+			padding: 10px 20px;
+			cursor: pointer;
+		}
+		.btn-primary {
+			margin-right: 15px;
+		}
+		.btn-secondary {
+			margin-left: 15px;
+		}
+	</style>
+</head>
+<body>
+
+	<div class="banner">
+		<div class="container banner_container">
+			<h1>AgriRate</h1>
+			<div>
+			<a class="btn back" href="{{ url_for('produceRecords')}}">Back</a>
+			<a class="btn home" href="{{ url_for('home')}}">Home</a>
+			</div>
+		</div>
+	</div>
+
+<div class="container main">
+	<div class="stock-info">
+		<div>
+			<h2>Produce Grader</h2>
+			<div class="stock-name">Stock: {{ stock_name }}</div>
+		</div>
+		<div class="stock-date">Date: {{ stock_date }}</div>
+	</div>
+
+	{%for produce in produce_records %}
+
+
+
+
+	<div class="produce-item">
+		<img src="https://www.webfx.com/wp-content/uploads/2021/10/generic-image-placeholder.png" alt="add image" class="produce-img">
+		<!-- <img src="{{url_for('get_image', filename='tomato.png')}}" class="produce-img" alt="{{ produce[name] }}"> -->
+
+		<div>
+			<div> <h3>{{ produce['Type'] }}</h3></div>
+
+			<div>Grade: {{ produce['Grade'] }}</div>
+
+		</div>
+	</div>
+	{% endfor %}
+
+	<div class="btn-group">
+		<a class="btn btn-primary" href="#">Download Report</a>
+		<a class="btn btn-secondary" href="#">View Charts</a>
+	</div>
+</div>
+
+<!-- Bootstrap JS -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>

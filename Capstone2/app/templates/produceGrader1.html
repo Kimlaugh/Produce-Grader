@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"> <!-- Adjusted viewport meta tag -->
+    <title>Produce Grader</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        /* Custom styles */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        .centered {
+            text-align: center; /* Horizontally center text */
+            display: flex; /* Use flexbox for centering */
+            flex-direction: column;
+            justify-content: center; /* Horizontally center child elements */
+            align-items: center; /* Vertically center child elements */
+            height: 100vh; /* Optionally, set height to make the div full height */
+        }
+        .banner {
+            background-color: #28a745;
+            color: #fff;
+            padding: 10px 0;
+            text-align: center;
+        }
+        .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .button {
+            background-color: #FFB316;
+            color: #ffffff;
+            border: none;
+            padding: 10px 20px;
+            margin-top: 20px;
+            cursor: pointer;
+        }
+        .home {
+            background-color: #BF3100;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            margin-top: 20px;
+            cursor: pointer;
+        }
+        h2 {
+            font-size: 25px;
+            color: #BF3100;
+        }
+        .radios {
+            display: flex;
+            flex-direction: row;
+            
+           
+        }
+        .radio_container {
+            margin: 20px;
+            margin-bottom: 6px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="banner">
+    <div class="container">
+        <h1 class="text-md-left text-center">AgriRate</h1>
+        <button class="home" onclick="backToHome()">Home</button>
+    </div>
+</div>
+
+<div class="centered">
+    <h2>Select a grading method:</h2>
+    <div class="radios">
+        <div class="radio_container">
+            <input type="radio" id="single" name="gradeMethod" value="Single" checked>
+            <label for="single">SINGLE</label>
+        </div>
+        <div class="radio_container">
+            <input type="radio" id="stock" name="gradeMethod" value="Stock">
+            <label for="stock">STOCK</label>
+        </div>
+    </div>
+    <button class="button" onclick="gradeMethod()">Next</button>
+</div>
+
+<script>
+    function gradeMethod() {
+        var selected_option = document.querySelector('input[name="gradeMethod"]:checked').value;
+        if (selected_option === "Single") {
+            window.location.href = "{{ url_for('uploadSingle') }}";
+        } else if (selected_option === "Stock") {
+            window.location.href = "{{ url_for('getStockName') }}";;
+        }
+    }
+
+    function backToHome() {
+        window.location.href = "{{ url_for('mainPage') }}";
+    }
+
+    // Functions singleGrader() and stockGrader() need to be implemented.
+</script>
+
+</body>
+</html>

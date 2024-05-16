@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"> <!-- Adjusted viewport meta tag -->
+    <title>Login - AgriRate</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        /* Custom styles */
+        .banner {
+            background-color: #28a745;
+            color: #fff;
+            padding: 10px 0;
+            text-align: center;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+
+           
+        }
+
+        .cont{
+            display: flex;
+            flex-direction: row;
+        }
+        h2 {
+            font-size: 14px;
+            color: #BF3100;
+            margin-top: 15px;
+            margin-left: 20px;
+            font-size: 25px;
+        }
+        .button {
+            background-color: #FFB316;
+            color: #ffffff;
+            border: none;
+            padding: 60px;
+            margin-top: 0px;
+            cursor: pointer;
+            margin-top: 10px;
+
+        }
+        .logout {
+            background-color: #BF3100;
+            border-style: none;
+            color: #ffffff;
+            padding-left: 15px;
+            padding-right: 15px;
+            padding-top: 0px;
+            padding-bottom: 0px;
+            margin-right: 20px;
+            
+        }
+
+        .flex_{
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+
+
+        }
+        .text-center{
+            align-self: flex-end;
+            margin-left: 20vw;
+        }
+    </style>
+</head>
+<body>
+    <div class="banner">
+        <div class="container flex_">
+            <div class="row">
+                <div class="cont">
+                    <h1 class="text-md-left text-center">AgriRate  {{grade}}</h1>
+                    
+                </div>
+                <div class=" text-center">
+                    
+                
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-between">
+        <h2>Welcome Back {{ name }}<h2>
+            <button class="logout" onclick="logout()">Logout</button>
+            
+    </div>
+
+
+
+<div class="container">
+    
+    <button class="button" onclick="gradeSelect()">Produce Grader</button>
+    
+    <button class="button" onclick="openProduceRecordsWindow()">Produce Records</button>
+</div>
+
+<script>
+    function logout() {
+        window.location.href = "{{ url_for('home') }}";
+    }
+
+    function gradeSelect(){
+        window.location.href = "{{ url_for('selection') }}";
+    }
+
+    function openProduceRecordsWindow(){
+        window.location.href = "{{ url_for('produceRecords')}}";
+    }
+</script>
+
+
+</body>
+</html>

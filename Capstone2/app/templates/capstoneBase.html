@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"> <!-- Adjusted viewport meta tag -->
+    <title>Login - AgriRate</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+    {% block css %} {% endblock%}
+
+    <style>
+        .banner {
+            background-color: #28a745;
+            color: #fff;
+            padding: 10px 0;
+            text-align: center;
+            position: fixed;
+            width: 100%;
+            z-index: 1000; /* Ensure banner is above other content */
+        }
+        .container {
+            margin-top: 60px; /* Adjust the margin-top to make space for the fixed banner */
+        }
+        .fixed-image {
+            position: fixed;
+            bottom: 20px; /* Adjust as needed */
+            right: 20px; /* Adjust as needed */
+        }
+
+        body{
+            
+        }
+
+        form{
+            
+        }
+       
+        .flex_{
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 0px;
+        }
+        .text-center{
+            align-self: flex-end;
+            margin-left: 20vw;
+        }
+    </style>
+    
+</head>
+<body>
+
+<header>
+    <div class="banner">
+        <div class="container flex_">
+            <div class="row">
+                <div class="">
+                    <h1 class="text-md-left text-center">AgriRate</h1>
+                </div>
+                <div class=" text-center">
+                    <!-- Any additional content for the banner can go here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<main>
+    <div class="container">
+        {% block main %}{% endblock %}
+    </div>
+</main>
+    
+
+<footer class="footer  d-flex justify-content-center align-items-center">
+    <div class="container">
+        {% include "footer.html" %}
+    </div>
+</footer>
+
+
+<!-- Bootstrap JS -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+
+{% block js %} {% endblock%}
+</body>
+</html>
