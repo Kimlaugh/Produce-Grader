@@ -126,6 +126,7 @@
     
     <div class="centered">
         <h3 style="display: none;" id="grade_type">{{grad_type}}</h3>
+        {% include 'flash_messages.html' %}
         <p class="label">Upload 3 images of the produce in the order: [ensure one image is the top view]</p>
     
         <!-- <button class="button">Upload Images</button> -->
@@ -273,6 +274,10 @@
 
   // Attach handleImageClick function to image click event
   document.getElementById('imagePreview').addEventListener('click', handleImageClick);
+
+  function backToHome() {
+        window.location.href = "{{ url_for('mainPage') }}";
+    }
 
   </script>
 

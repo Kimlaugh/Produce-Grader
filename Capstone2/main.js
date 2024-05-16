@@ -7,12 +7,12 @@ function createWindow() {
     height: 600,
     fullscreen: false, // Run in full-screen mode
     webPreferences: {
-      nodeIntegration: true
+      nodeIntegration: true,
     }
   });
 
   // Load the Flask app (assuming it runs on port 5000)
-  mainWindow.loadURL('http://127.0.0.1:5000');
+  mainWindow.loadURL('http://127.0.0.1:5000/');
 
   mainWindow.on('closed', () => {
     app.quit();
@@ -40,7 +40,7 @@ function createWindow() {
     }
 ]);
 
-  // Menu.setApplicationMenu(menu);
+  Menu.setApplicationMenu(menu);
  
 }
 

@@ -360,7 +360,7 @@ def gradeStock():
         return render_template("StockSummary.html", grade=user_stock[-1])
     else:
         flash("This is not a recognised Produce")
-        print (class_result['content'])
+        # print (class_result['content'])
         return render_template('uploadImg.html', grad_type = "stock")
             
         
